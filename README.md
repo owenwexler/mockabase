@@ -2,6 +2,13 @@
 
 Mockabase is a minimal open-source local offline mock authentication service that approximately mocks the Supabase API for use in automated testing and development.  I made Mockabase because I personally found Supabase hard to test with in development and found that I needed a mock service that would allow me to consistently create and delete test users without having several different email addresses.  I personally believe it is ok to mock Supabase when doing automated tests of an app's functionality, as automated testing of live Supabase responses would be tantamount to testing Supabase itself, which the Supabase team has covered.  That said, of course, I recommend to do some manual acceptance testing of your app with live Supabase responses too.
 
+## Disclaimer
+I am not affiliated with Supabase or the Supbase team in any way.  This service is not condoned, supported, or endorsed by Supabase or the Supabase team in any way.
+
+I aimply wrote this to solve a problem I had with testing Supabase auth in my apps consistently and decided to open-source it in the hope that it would help other developers solve similar problems.  That's all.
+
+This is not commercial project and I'm not making money from it.  The name Supabase belongs to its creators.
+
 # How does Mockabase work?
 Mockabase uses a local database with a users table that loosely mocks the auth.users table in Supabase.  There are various routes for all expected user functions (including a mock "OAuth" login and signup) detailed in the routes section below.  "Sessions" are currently handled with a JSON file at the root of the project called ```session.json``` :way is either null if logged out or has the id and e-mail of the current user if logged in.  This is an acceptable minimal way to mock sessions for testing and development purposes.
 
