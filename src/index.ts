@@ -162,5 +162,5 @@ serve({
   fetch: app.fetch,
   port: Number(PORT),
 }, (info) => {
-  console.log('MOCKAUTH SERVER RUNNING ON PORT', PORT);
+  console.log('MOCKABASE SERVER RUNNING ON PORT', PORT);
 });

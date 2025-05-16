@@ -1,5 +1,5 @@
 {
-  "name": "mockauth-node",
+  "name": "mockabase",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",

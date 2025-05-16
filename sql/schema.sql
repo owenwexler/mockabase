@@ -1,6 +1,6 @@
-CREATE DATABASE mockauth_db;
+CREATE DATABASE mockabase_db;
 
-CREATE USER mockauth_user WITH PASSWORD 'mockauth123';
+CREATE USER mockabase_user WITH PASSWORD 'mockabase123';
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -13,7 +13,7 @@ CREATE TABLE users (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO mockauth_user;
-GRANT INSERT ON ALL TABLES IN SCHEMA public TO mockauth_user;
-GRANT UPDATE ON ALL TABLES IN SCHEMA public TO mockauth_user;
-GRANT DELETE ON ALL TABLES IN SCHEMA public TO mockauth_user;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO mockabase_user;
+GRANT INSERT ON ALL TABLES IN SCHEMA public TO mockabase_user;
+GRANT UPDATE ON ALL TABLES IN SCHEMA public TO mockabase_user;
+GRANT DELETE ON ALL TABLES IN SCHEMA public TO mockabase_user;
