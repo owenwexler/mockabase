@@ -18,14 +18,12 @@ app.get('/', (c) => {
 
 app.post('/seed', async (c) => {
   console.log('POST /seed');
-  const body = await c.req.parseBody();
-  const rawSeedData = body['data'] ? body['data'] as string : '[]';
-  const seedData = JSON.parse(rawSeedData);
+  const body = await c.req.json();
 
   try {
     const promises = [];
 
-    for (const obj of seedData) {
+    for (const obj of body) {
       const { id, email, password } = obj;
 
       promises.push(signup({ id, email, password }));
@@ -57,7 +55,10 @@ app.post('/seed', async (c) => {
 
 app.post('/signup', async (c) => {
   console.log('POST /signup');
-  const body = await c.req.parseBody();
+  const contentType = c.req.header('Content-Type');
+
+  // use c.req.json() if the content type is 'application/json' and c.req.parseBody() otherwise
+  const body = contentType === 'application/json' ? await c.req.json() : await c.req.parseBody();
 
   const { email, password } = getTypedEmailPasswordFromBody(body);
 
@@ -88,7 +89,11 @@ app.post('/signup', async (c) => {
 
 app.post('/login', async (c) => {
   console.log('POST /login');
-  const body = await c.req.parseBody();
+  const contentType = c.req.header('Content-Type');
+
+  // use c.req.json() if the content type is 'application/json' and c.req.parseBody() otherwise
+  const body = contentType === 'application/json' ? await c.req.json() : await c.req.parseBody();
+
   const { email, password } = getTypedEmailPasswordFromBody(body);
 
   try {

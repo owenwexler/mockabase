@@ -7,7 +7,7 @@ I am not affiliated with Supabase or the Supbase team in any way.  This service 
 
 I aimply wrote this to solve a problem I had with testing Supabase auth in my apps consistently and decided to open-source it in the hope that it would help other developers solve similar problems.  That's all.
 
-This is not commercial project and I'm not making money from it.  The name Supabase belongs to its creators.
+This is not a commercial project and I'm not making money from it.  The name Supabase belongs to its creators.
 
 # How does Mockabase work?
 Mockabase uses a local database with a users table that loosely mocks the auth.users table in Supabase.  There are various routes for all expected user functions (including a mock "OAuth" login and signup) detailed in the routes section below.  "Sessions" are currently handled with a JSON file at the root of the project called ```session.json``` :way is either null if logged out or has the id and e-mail of the current user if logged in.  This is an acceptable minimal way to mock sessions for testing and development purposes.
@@ -57,7 +57,7 @@ if (process.env.NODE_ENV === 'testing') {
 ## Routes
 Generally, the response for each route that returns responses is in the { data, error } format also used by Supabase.
 
-**IMPORTANT**: All body data sent to POST routes must be sent as ```application/x-www-form-urlencoded``` or ```multipart/form-data```.  We are currently having issues getting Hono to properly parse body data in ```application/json``` format.
+POST routes that accept body data can either receive it as a ```application/x-www-form-urlencoded```,  ```multipart/form-data```, or ```application/json``` Content-Type, except for the ```/seed``` route, which accepts only ```application/json``` as the Content-Type.
 
 ### **POST** /signup
 Create a new user in the database with id, email, and hashed password
