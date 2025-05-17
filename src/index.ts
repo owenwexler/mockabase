@@ -38,7 +38,7 @@ app.post('/seed', async (c) => {
         id: obj.value.data!.id,
         email: obj.value.data!.email
       }
-    })
+    });
 
     return c.json({
       data,
