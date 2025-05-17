@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { v4 as uuidv4 } from 'uuid';
 
-import { checkUserExists, login, signup } from './db/models/user';
+import { checkUserExists, deleteAllUsers, deleteUser, login, signup } from './db/models/user';
 import { createSession, getCurrentSession, removeSession } from './session/sessionFunctions';
 import { getTypedEmailPasswordFromBody } from './helper/getTypedEmailPasswordFromBody';
 
@@ -43,7 +43,7 @@ app.post('/seed', async (c) => {
     return c.json({
       data,
       error: null
-    })
+    });
   } catch (error) {
     console.error(error);
     return c.json({
@@ -163,9 +163,46 @@ app.get('/get-current-session', async (c) => {
   }
 });
 
+app.delete('/delete-user/:userId', async (c) => {
+  const { userId } = c.req.param();
+
+  try {
+    await deleteUser(userId);
+
+    return c.json({
+      data: null,
+      error: null
+    });
+  } catch (error) {
+    console.error(error);
+    return c.json({
+      data: null,
+      error: 'Internal Server Error'
+    });
+  }
+});
+
+app.delete('/clear', async (c) => {
+  try {
+    await deleteAllUsers();
+
+    return c.json({
+      data: null,
+      error: null
+    });
+  } catch (error) {
+    console.error(error);
+    return c.json({
+      data: null,
+      error: 'Internal Server Error'
+    });
+  }
+});
+
 serve({
   fetch: app.fetch,
   port: Number(PORT),
 }, (info) => {
+  console.log(info);
   console.log('MOCKABASE SERVER RUNNING ON PORT', PORT);
 });

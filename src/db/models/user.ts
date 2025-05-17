@@ -4,6 +4,7 @@ import sql from "../db";
 import { blankUser } from "../../data/blankObjects";
 import type { User } from "../../typedefs/User";
 import { v4 as uuidv4 } from 'uuid';
+import type { ErrorType } from "../../typedefs/ErrorType";
 
 interface GenericUserModelArgs {
   email: string;
@@ -78,7 +79,7 @@ const login = async (args: GenericUserModelArgs) => {
   }
 }
 
-const getUser = async (email: string): Promise<{ data: User | null, error: string | null} > => {
+const getUser = async (email: string): Promise<{ data: User | null, error: ErrorType | null} > => {
   try {
     const response = await sql<User[]>`SELECT id, email, encrypted_password AS "encryptedPassword" FROM users WHERE email = ${email};`;
 
@@ -113,9 +114,47 @@ const checkUserExists = async (email: string): Promise<boolean> => {
   }
 }
 
+const deleteUser = async (id: string) => {
+  try {
+    await sql`DELETE FROM users WHERE id = ${id}`;
+
+    return {
+      data: null,
+      error: null
+    }
+  } catch (error) {
+    console.error(error);
+
+    return {
+      data: null,
+      error: 'Internal Server Error'
+    }
+  }
+}
+
+const deleteAllUsers = async () => {
+  try {
+    await sql`DELETE FROM users;`;
+
+    return {
+      data: null,
+      error: null
+    }
+  } catch (error) {
+    console.error(error);
+
+    return {
+      data: null,
+      error: 'Internal Server Error'
+    }
+  }
+}
+
 export {
   signup,
   login,
   getUser,
-  checkUserExists
+  checkUserExists,
+  deleteUser,
+  deleteAllUsers
 }

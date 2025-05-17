@@ -1,8 +1,11 @@
 # Mockabase
 
-Mockabase is a minimal open-source local offline mock authentication service that approximately mocks the Supabase API for use in automated testing and development.  I made Mockabase because I personally found Supabase hard to test with in development and found that I needed a mock service that would allow me to consistently create and delete test users without having several different email addresses.  I personally believe it is ok to mock Supabase when doing automated tests of an app's functionality, as automated testing of live Supabase responses would be tantamount to testing Supabase itself, which the Supabase team has covered.  That said, of course, I recommend to do some manual acceptance testing of your app with live Supabase responses too.
+Mockabase is a minimal open-source local offline mock authentication service that approximately mocks the Supabase API for use in automated testing and development.  I made Mockabase because I personally found Supabase hard to test with in development and found that I needed a mock service that would allow me to consistently create and delete test users without having several different real email addresses.  I personally believe it is ok to mock Supabase when doing automated tests of an app's functionality, as automated testing of live Supabase responses would be tantamount to testing Supabase itself, which the Supabase team has covered.  That said, of course, I recommend to do some manual acceptance testing of your app with live Supabase responses too.
 
-## Disclaimer
+## Disclaimers
+
+**IMPORTANT: UNDER NO CIRCUMSTANCES SHOULD MOCKABASE BE USED IN PRODUCTION.  MOCKABASE IS NOT A PRODUCTION-READY AUTH SERVICE.  MOCKABASE IS STRICTLY FOR USE IN TESTING, PROTOTYPING, AND LOCAL DEVELOPMENT.  ANY USE OF MOCKABASE IN PRODUCTION IS NOT CONDONED BY THE CREATORS AND MAINTAINERS, IS AT YOUR OWN RISK, AND THE CREATORS AND MAINTAINERS OF MOCKABASE ARE NOT TO BE HELD LIABLE UNDER ANY CIRCUMSTANCES FOR LOSSES RELATED TO THE USE OF THIS SERVICE IN PRODUCTION APPS.**
+
 I am not affiliated with Supabase or the Supbase team in any way.  This service is not condoned, supported, or endorsed by Supabase or the Supabase team in any way.
 
 I aimply wrote this to solve a problem I had with testing Supabase auth in my apps consistently and decided to open-source it in the hope that it would help other developers solve similar problems.  That's all.
@@ -10,9 +13,7 @@ I aimply wrote this to solve a problem I had with testing Supabase auth in my ap
 This is not a commercial project and I'm not making money from it.  The name Supabase belongs to its creators.
 
 # How does Mockabase work?
-Mockabase uses a local database with a users table that loosely mocks the auth.users table in Supabase.  There are various routes for all expected user functions (including a mock "OAuth" login and signup) detailed in the routes section below.  "Sessions" are currently handled with a JSON file at the root of the project called ```session.json``` :way is either null if logged out or has the id and e-mail of the current user if logged in.  This is an acceptable minimal way to mock sessions for testing and development purposes.
-
-**IMPORTANT: UNDER NO CIRCUMSTANCES SHOULD MOCKABASE BE USED IN PRODUCTION.  MOCKABASE IS NOT A PRODUCTION-READY AUTH SERVICE.  MOCKABASE IS STRICTLY FOR USE IN TESTING, PROTOTYPING, AND LOCAL DEVELOPMENT.  ANY USE OF MOCKABASE IN PRODUCTION IS NOT CONDONED BY THE CREATORS, IS AT YOUR OWN RISK, AND THE CREATORS OF MOCKABASE ARE NOT TO BE HELD LIABLE UNDER ANY CIRCUMSTANCES FOR LOSSES RELATED TO THE USE OF THIS SERVICE IN PRODUCTION APPS.**
+Mockabase uses a local database with a users table that loosely mocks the auth.users table in Supabase.  There are various routes for all expected user functions (including a mock "OAuth" login and signup) detailed in the routes section below.  "Sessions" are currently handled with a JSON file at the root of the project called ```session.json```, which is either null if logged out or has the id and e-mail of the current user if logged in.  This is an acceptable minimal way to mock sessions for testing and development purposes.
 
 # Installation
 
@@ -33,7 +34,7 @@ You must have the following installed locally to use Mockabase:
 6.  Run the server using ```npm run dev```
 
 ## Suggsted Usage
-In your frontend, use an environment variable like ```NODE_ENV``` that is set to ```testing``` when it's time to test the app or prototype, then design your code to use Mockabase for authentication and authorization while in testing mode.
+In your frontend, use an environment variable like ```NODE_ENV``` that is set to ```testing``` when it's time to test the app or prototype, then design your code to conditionally use Mockabase for authentication and authorization in all of your auth checks, login/logout functions, etc. only while in testing mode.
 
 ```
 if (process.env.NODE_ENV === 'testing') {
@@ -134,6 +135,7 @@ Takes in an array of user ```{ id?, email, password }``` objects as a string. ``
 * **Backend Framework**: Hono
 * **Hash/Encryption Library**: BCrypt
 * **Postgres Client**: Postgres.js
+* **Testing**: Vitest
 
 Node is used instead of Deno, Bun, or other runtimes for maximum compatibility with everyone's use.
 

@@ -1,0 +1,1 @@
+export type ErrorType = 'Internal Server Error' | 'User Already Exists' | 'Wrong Password' | 'User Not Found' | null;
