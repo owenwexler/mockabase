@@ -129,6 +129,73 @@ Returns:
 ### **POST** /seed
 Takes in an array of user ```{ id?, email, password }``` objects as a string. ```JSON.parse()```s the string to an array, then adds each user to the database if the user doesn't already exist.
 
+Accepted body format:
+```
+[
+  {
+    id: uuid,
+    email: string (email address),
+    password: string,
+  },
+  {
+    id: uuid,
+    email: string (email address),
+    password: string,
+  },
+  etc.
+]
+```
+
+Returns:
+```
+[
+  all sucessfully added objects above
+]
+```
+
+Unlike the other routes, the Content-Type for this route must be ```application/json```.
+
+### **POST** /mock-oauth/:provider
+Mocks an OAuth login with an e-mail address and password pre-determined with the MOCK_OAUTH_EMAIL and MOCK_OAUTH_PASSWORD environment variables.  
+
+Accepted URL Param: :provider - 'facebook' | 'google' | 'apple' | 'github' - doesn't matter because the provider variable is not used
+
+Returns:
+```
+{
+  data: {
+    id: string,
+    email: string (email address)
+  } | null,
+  error: 'Internal Server Error' | null
+}
+```
+
+### **DELETE** /delete-user/:userId
+
+Accepted URL Param: :userId - user ID of the user to delete
+
+Returns:
+```
+{
+  data: null,
+  error: 'Internal Server Error' | null
+}
+```
+
+### **DELETE** /clear
+
+Deletes every user in the database
+**USE WITH CAUTION.  THE DELETIONS ARE PERMANENT AND CAN'T BE REVERSED**
+
+Returns:
+```
+{
+  data: null,
+  error: 'Internal Server Error' | null
+}
+```
+
 ## Stack
 * **Language**: TypeScript
 * **Runtime**: Node
