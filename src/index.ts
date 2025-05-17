@@ -7,7 +7,7 @@ import { checkUserExists, deleteAllUsers, deleteUser, login, signup } from './db
 import { createSession, getCurrentSession, removeSession } from './session/sessionFunctions';
 import { getTypedEmailPasswordFromBody } from './helper/getTypedEmailPasswordFromBody';
 
-const { PORT } = process.env;
+const { PORT, MOCK_OAUTH_EMAIL, MOCK_OAUTH_PASSWORD } = process.env;
 
 const app = new Hono();
 
@@ -126,6 +126,44 @@ app.post('/login', async (c) => {
       error: 'Internal Server Error'
     });
   }
+});
+
+app.post('/mock-oauth/:provider', async (c) => {
+  const { provider } = c.req.param();
+
+  console.log(`POST /mock-oauth/${provider}`);
+
+  const hasOAuthVariables = (MOCK_OAUTH_EMAIL && MOCK_OAUTH_EMAIL !== '') && (MOCK_OAUTH_PASSWORD && MOCK_OAUTH_PASSWORD !== '');
+
+  if (!hasOAuthVariables) {
+    return c.json({
+      data: null,
+      error: 'No OAuth Found'
+    })
+  }
+
+  const result = await login({ email: MOCK_OAUTH_EMAIL, password: MOCK_OAUTH_PASSWORD });
+  
+  if (result.error && result.error === 'Wrong Password') {
+    return c.json({
+      data: null,
+      error: 'Wrong Password'
+    });
+  }
+
+  if (result.error && result.error === 'User Not Found') {
+    return c.json({
+      data: null,
+      error: 'User Not Found'
+    });
+  }
+
+  const session = createSession(result.data!);
+
+  return c.json({
+    data: session,
+    error: null
+  });
 });
 
 app.post('/logout', async (c) => {
