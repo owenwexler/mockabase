@@ -1,8 +1,10 @@
 import { test, describe, expect, beforeEach, beforeAll, afterAll } from 'vitest';
-import { seedDB, testGetSession, testLogin, testLogout, testMockOAuthLogin, testSignUp } from './testFunctions/testFunctions';
+import { seedDB, testDeleteUser, testGetSession, testLogin, testLogout, testMockOAuthLogin, testSignUp } from './testFunctions/testFunctions';
 import { seedData } from '../src/data/seedData';
-import type { ReturnObject } from '../src/typedefs/ReturnObject';
 import { testEnv } from './testEnv/testEnv';
+import { newTestUser } from '../src/data/newTestUser';
+
+import type { ReturnObject } from '../src/typedefs/ReturnObject';
 
 const { mockOAuthEmail } = testEnv;
 
@@ -70,6 +72,32 @@ describe('Core functions', () => {
   test('mock OAuth login returns the proper response', async () => {
     const session = await testMockOAuthLogin();
     expect(session.data!.email).toEqual(mockOAuthEmail);
+    await testLogout();
+  });
+
+  test('a new test user can be signed up successfully, a logged-in session returns the new user, the test user can be deleted successfully, and attempting to login with the deletd test user returns the proper error', async () => {
+    const signupResult = await testSignUp(newTestUser);
+    expect(signupResult).toEqual({
+      data: { id: newTestUser.id, email: newTestUser.email },
+      error: null
+    });
+
+    await testLogout();
+
+    const session = await testLogin({ email: newTestUser.email, password: newTestUser.password });
+
+    expect(session).toEqual({
+      data: { id: newTestUser.id, email: newTestUser.email },
+      error: null
+    });
+
+    await testLogout();
+
+    const deletionResult = await testDeleteUser(newTestUser.id);
+    expect(deletionResult).toEqual(emptySessionObject);
+
+    const deletedUserSession = await testLogin({ email: newTestUser.email, password: newTestUser.password });
+    expect(deletedUserSession).toEqual(nonexistentUserErrorObject);
   });
 
   // re-seed the test users into the DB after the tests are finished
