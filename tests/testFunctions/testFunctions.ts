@@ -4,7 +4,7 @@ import type { ReturnObject } from "../../src/typedefs/ReturnObject";
 
 import { testEnv } from "../testEnv/testEnv";
 
-const { hostUrl } = testEnv;
+const { hostUrl, mockOAuthEmail, mockOAuthPassword } = testEnv;
 
 const seedIds = seedData.map(obj => obj.id);
 
@@ -116,11 +116,29 @@ const testDeleteUser = async (userId: string) => {
   }
 }
 
+const testMockOAuthLogin = async () => {
+  try {
+    const response = await typedFetch<ReturnObject>({
+      url: `${hostUrl}/mock-oauth/google`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return response;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
 export {
   seedDB,
   testLogin,
   testGetSession,
   testSignUp,
   testLogout,
-  testDeleteUser
+  testDeleteUser,
+  testMockOAuthLogin
 }
