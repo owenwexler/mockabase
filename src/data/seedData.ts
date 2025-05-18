@@ -16,3 +16,7 @@ const seedData = [
     password: 'blank1'
   }
 ];
+
+export {
+  seedData
+}

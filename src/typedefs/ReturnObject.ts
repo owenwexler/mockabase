@@ -3,7 +3,7 @@ import type { Session } from "./Session";
 
 interface ReturnObject {
   data: Session | null;
-  error: ErrorType;
+  error: ErrorType | null;
 }
 
 export type {
