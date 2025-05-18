@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { v4 as uuidv4 } from 'uuid';
 
-import { checkUserExists, deleteAllUsers, deleteUser, login, signup } from './db/models/user';
+import { checkUserExists, deleteAllUsers, deleteMultipleUsers, deleteUser, login, signup } from './db/models/user';
 import { createSession, getCurrentSession, removeSession } from './session/sessionFunctions';
 import { getTypedEmailPasswordFromBody } from './helper/getTypedEmailPasswordFromBody';
 
@@ -143,7 +143,7 @@ app.post('/mock-oauth/:provider', async (c) => {
   }
 
   const result = await login({ email: MOCK_OAUTH_EMAIL, password: MOCK_OAUTH_PASSWORD });
-  
+
   if (result.error && result.error === 'Wrong Password') {
     return c.json({
       data: null,
@@ -206,6 +206,30 @@ app.delete('/delete-user/:userId', async (c) => {
 
   try {
     await deleteUser(userId);
+
+    return c.json({
+      data: null,
+      error: null
+    });
+  } catch (error) {
+    console.error(error);
+    return c.json({
+      data: null,
+      error: 'Internal Server Error'
+    });
+  }
+});
+
+app.delete('/delete-multiple-users', async (c) => {
+  const contentType = c.req.header('Content-Type');
+
+  // use c.req.json() if the content type is 'application/json' and c.req.parseBody() otherwise
+  const body = contentType === 'application/json' ? await c.req.json() : await c.req.parseBody();
+
+  const userIds = body;
+
+  try {
+    await deleteMultipleUsers(userIds);
 
     return c.json({
       data: null,

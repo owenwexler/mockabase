@@ -132,6 +132,24 @@ const deleteUser = async (id: string) => {
   }
 }
 
+const deleteMultipleUsers = async (ids: string[]) => {
+  try {
+    await sql`DELETE FROM users WHERE id IN (SELECT id FROM users WHERE id = ANY(${ids}::uuid[]));`;
+
+    return {
+      data: null,
+      error: null
+    }
+  } catch (error) {
+    console.error(error);
+
+    return {
+      data: null,
+      error: 'Internal Server Error'
+    }
+  }
+}
+
 const deleteAllUsers = async () => {
   try {
     await sql`DELETE FROM users;`;
@@ -156,5 +174,6 @@ export {
   getUser,
   checkUserExists,
   deleteUser,
+  deleteMultipleUsers,
   deleteAllUsers
 }

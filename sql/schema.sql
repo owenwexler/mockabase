@@ -4,6 +4,7 @@ CREATE USER mockabase_user WITH PASSWORD 'mockabase123';
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- run the following commands on both the main DB and the test DB
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
