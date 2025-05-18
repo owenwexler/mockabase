@@ -221,6 +221,8 @@ app.delete('/delete-user/:userId', async (c) => {
 });
 
 app.delete('/delete-multiple-users', async (c) => {
+  console.log('POST /delete-multiple-users');
+
   const contentType = c.req.header('Content-Type');
 
   // use c.req.json() if the content type is 'application/json' and c.req.parseBody() otherwise

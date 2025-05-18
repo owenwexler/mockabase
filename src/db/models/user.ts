@@ -1,10 +1,10 @@
-import { hash } from "../../helper/hash";
-import { comparePasswords } from "../../helper/comparePasswords";
-import sql from "../db";
-import { blankUser } from "../../data/blankObjects";
-import type { User } from "../../typedefs/User";
+import { hash } from '../../helper/hash';
+import { comparePasswords } from '../../helper/comparePasswords';
+import sql from '../db';
+import { blankUser } from '../../data/blankObjects';
+import type { User } from '../../typedefs/User';
 import { v4 as uuidv4 } from 'uuid';
-import type { ErrorType } from "../../typedefs/ErrorType";
+import type { ErrorType } from '../../typedefs/ErrorType';
 
 interface GenericUserModelArgs {
   email: string;
