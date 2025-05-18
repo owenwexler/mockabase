@@ -21,21 +21,23 @@ You must have the following installed locally to use Mockabase:
 * Node
 * POSTGRESQL
 
-1.  Fork and/or clone the repository (fork and clone if you want to contribute).
+1.  Make sure you have [Node](https://nodejs.org/) and [Postgres](https://www.postgresql.org/) installed locally.
 
-2.  Run ```npm install``` to install all dependencies.
+2.  Fork and/or clone the repository.
 
-3.  Set up a local Postgres database according to the schema file in ```sql/schema.sql```.
+3.  Run ```npm install``` to install all dependencies.
 
-4.  Create a ```.env``` file and set up all environment variables according to the ```.env.example``` file.  For the PORT number, I recommend using a port number you don't use for any other servers or services, since you'll likely be running Mockabase alongside of many other services.
+4.  Set up a local Postgres database on your local machine according to the schema file in ```sql/schema.sql```.
 
-5.  Create a ```testEnv.ts``` file in the ```tests/testEnv``` folder and set up all the ```testEnv``` variables according to the ```testEnv.example.ts``` file.  This is necessary because Vitest can not read ```process.env```.
+5.  Create a ```.env``` file and set up all environment variables according to the ```.env.example``` file.  For the PORT number, I recommend using a port number you don't use for any other servers or services, since you'll likely be running Mockabase alongside of many other services.
 
-6.  Create a user using the ```/signup``` route (very important to use the ```/signup``` route so you get a properly hashed password) for use with the mock OAuth function and fill out the corresponding environment variables in both ```.env``` and ```testEnv.ts``` accordingly.
+6.  Create a ```testEnv.ts``` file in the ```tests/testEnv``` folder and set up all the ```testEnv``` variables according to the ```testEnv.example.ts``` file.  This is necessary because Vitest can not read ```process.env```.
 
-7.  Run the server using ```npm run dev```
+7.  Create a user using the ```/signup``` route (very important to use the ```/signup``` route so you get a properly hashed password) for use with the mock OAuth function and fill out the corresponding environment variables in both ```.env``` and ```testEnv.ts``` accordingly.
 
-8.  Run the tests using ```npm run test``` and confirm that they all pass
+8.  Run the server using ```npm run dev```.
+
+9.  Run the tests using ```npm run test``` and confirm that they all pass.
 
 ## Suggsted Usage
 In your frontend, use an environment variable like ```NODE_ENV``` that is set to ```testing``` when it's time to test the app or prototype, then design your code to conditionally use Mockabase for authentication and authorization in all of your auth checks, login/logout functions, etc. only while the environment variale of your choice is set to ```testing``` or whatever you designate to be "testing mode".
@@ -60,7 +62,36 @@ if (process.env.NODE_ENV === 'testing') {
 }
 ```
 
-## Routes
+## Directory structure
+```
+mockabase
+├── sql - the schema file used to build the local databse
+├── src - source files
+│   ├── data - data files used by the app like blank objects, the seed and test user data for the DB
+│   ├── db - the file to initialize the DB
+│   │   ├── models - all DB models (currently just for user)
+│   ├── helper - helper functions for comparing passwords, hashing, fetching, etc.
+│   ├── session - all functions for creating, deleting, and managing sessions
+│   ├── typedefs - type definitions
+│   ├── index.ts - the main file containing the server initialization and all the routes, the beating heart of Mockabase
+├── tests - test directory
+│   ├── testEnv - test environment (not committed to GitHub, must be created manually), and the template for creating the test environment manually)
+│   ├── testFunctions - all reusable functions used in the tests
+│   ├── core-functions.test.ts - test file for all Mockabase core functions
+├── .env - environment variables (not committed to GitHub, must be created manually)
+├── .env.example - environment variable template or creating .env
+├── .gitignore - .gitignore file
+├── CODE_OF_CONDUCT.md - contributor code of conduct
+├── CONTRIBUTING.md - contributing guidelines
+├── package.json - NPM package.json file
+├── package-lock.json - NPM package-lock.json file
+├── README.md - this file
+├── session.json - JSON file that stores all mock "session" data - null if logged out, { id, email } of logged-in user if logged in
+├── tsconfig.json - TypeScript config
+```
+
+
+## Routes/Endpoints
 Generally, the response for each route that returns responses is in the { data, error } format also used by Supabase.
 
 POST routes that accept body data can either receive it as a ```application/x-www-form-urlencoded```,  ```multipart/form-data```, or ```application/json``` Content-Type, except for the ```/seed``` and ```/delete-multiple-users``` routes, which accept only ```application/json``` as the Content-Type.  Hono uses different parsing functions for a form data body and a raw JSON body, which is why this distinction must be made.
