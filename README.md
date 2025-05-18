@@ -254,7 +254,7 @@ Returns:
 ```
 
 ## Stack
-* **Language**: [TypeScript]https://www.typescriptlang.org/
+* **Language**: [TypeScript](https://www.typescriptlang.org/)
 * **Runtime**: [Node](https://nodejs.org/)
 * **Database**: [PostgreSQL](https://www.postgresql.org/)
 * **Backend Framework**: [Hono](https://hono.dev/)
