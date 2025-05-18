@@ -129,7 +129,7 @@ Enhancement suggestions are tracked as [GitHub issues](https://github.com/owenwe
 
 9.  Run the tests using ```npm run test``` and confirm that they all pass.
 
-10.  Create a branch for your contribution and send a pull request to the main repo.  Ensure all tests still pass before sending a pull request.
+10.  Create a branch for your contribution and send a pull request to the main repo.  Ensure all tests still pass before sending a pull request.  Any new major features contributed must be accompanied by tests confirming they work and must not break any existing tests.
 
 ## Styleguides
 ### Commit Messages
