@@ -143,7 +143,7 @@ Accepted input body:
 Returns:
 ```
 {
-  data: {
+  data: user: {
     {
       id: string (UUID),
       email: string (e-mail address)
