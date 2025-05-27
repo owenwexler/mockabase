@@ -17,7 +17,7 @@ const loginTestCases = seedData.map(obj => {
   return {
     input: obj,
     expected: {
-      data: { id: obj.id, email: obj.email },
+      data: { user: { id: obj.id, email: obj.email } },
       error: null
     }
   }
@@ -41,8 +41,8 @@ describe('Core functions', () => {
   });
 
   test.each(loginTestCases)(`logging in as each test user with the correct password returns the expected result`, async ({ input, expected }) => {
-    const session = await testLogin({ email: input.email, password: input.password });
-    expect(session).toEqual(expected);
+    const result = await testLogin({ email: input.email, password: input.password });
+    expect(result).toEqual(expected);
     await testLogout();
   })
 
@@ -53,8 +53,8 @@ describe('Core functions', () => {
   });
 
   test.each(wrongPasswordTestCases)('attempting to login as one of the seeded users with both a blatantly wrong password and a password with one character off returns the proper error', async ({ input, expected }) => {
-    const session = await testLogin(input);
-    expect(session).toEqual(expected);
+    const result = await testLogin(input);
+    expect(result).toEqual(expected);
     await testLogout();
   });
 
@@ -71,23 +71,23 @@ describe('Core functions', () => {
 
   test('mock OAuth login returns the proper response', async () => {
     const session = await testMockOAuthLogin();
-    expect(session.data!.email).toEqual(mockOAuthEmail);
+    expect(session.data!.user.email).toEqual(mockOAuthEmail);
     await testLogout();
   });
 
   test('a new test user can be signed up successfully, a logged-in session returns the new user, the test user can be deleted successfully, and attempting to login with the deletd test user returns the proper error', async () => {
     const signupResult = await testSignUp(newTestUser);
     expect(signupResult).toEqual({
-      data: { id: newTestUser.id, email: newTestUser.email },
+      data: { user: { id: newTestUser.id, email: newTestUser.email } },
       error: null
     });
 
     await testLogout();
 
-    const session = await testLogin({ email: newTestUser.email, password: newTestUser.password });
+    const result = await testLogin({ email: newTestUser.email, password: newTestUser.password });
 
-    expect(session).toEqual({
-      data: { id: newTestUser.id, email: newTestUser.email },
+    expect(result).toEqual({
+      data: { user: { id: newTestUser.id, email: newTestUser.email } },
       error: null
     });
 

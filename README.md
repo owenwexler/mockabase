@@ -15,6 +15,12 @@ This is not a commercial project and I'm not making money from it.  The name Sup
 # How does Mockabase work?
 Mockabase uses a local database with a users table that loosely mocks the ```auth.users``` table in Supabase.  There are various routes for all expected user functions (including a mock "OAuth" login and signup) detailed in the routes section below.  "Sessions" are currently handled with a JSON file at the root of the project called ```session.json```, which is either null if logged out or has the id and e-mail of the current user if logged in.  I consider this an acceptable minimal way to mock sessions for testing and development purposes.
 
+# Major breaking change in version 2.0
+```signup```, ```login```, and ```get-current-session``` routes now return objects in the following format:
+```{ data: { user: User } | null, error: error | null } ```
+
+This more closely mirrors the Supabase API.
+
 # Installation
 
 You must have the following installed locally to use Mockabase:
@@ -40,7 +46,7 @@ You must have the following installed locally to use Mockabase:
 9.  Run the tests using ```npm run test``` and confirm that they all pass.
 
 ## Tests
-Mockabase has a comprehensive test suite written with Vitest and covering most of Mockabase' core functions.  Not all code is unit-tested, but almost all core functions except the ```/clear``` endpoint are covered by the tests.  Any new major features contributed must be accompanied by tests confirming they work and must not break any existing tests.
+Mockabase has a comprehensive test suite written with Vitest and covering most of Mockabase' core functions.  Not all code is unit-tested, but almost all core functions except the ```/clear``` endpoint are covered by the tests.  Any new major features contributed must be accompanied by tests confirming they work and must not break any existing tests unless the feature in question is a major breaking feature.  In this case, the way the tests were broken and had to be refactored must be documented.
 
 ## Suggsted Usage
 In your frontend, use an environment variable like ```NODE_ENV``` that is set to ```testing``` when it's time to test the app or prototype, then design your code to conditionally use Mockabase for authentication and authorization in all of your auth checks, login/logout functions, etc. only while the environment variable of your choice is set to ```testing``` or whatever you designate to be "testing mode".
@@ -114,9 +120,11 @@ id is an optional field.  If the id field is left off the body, a random UUID wi
 Returns:
 ```
 {
-  data: {
-    id: string (UUID),
-    email: string (e-mail address)
+  data: user: {
+    {
+      id: string (UUID),
+      email: string (e-mail address)
+    }
   } | null,
   error
   : 'Internal Server Error' | 'User Already Exists' | null }
@@ -136,8 +144,10 @@ Returns:
 ```
 {
   data: {
-    id: string (UUID),
-    email: string (e-mail address)
+    {
+      id: string (UUID),
+      email: string (e-mail address)
+    }
   } | null,
   error:
     'Internal Server Error' |
@@ -156,9 +166,11 @@ Retrieves the current session from the session.json file.
 Returns:
 ```
 {
-  data: {
-    id: string (UUID),
-    email: string (e-mail address)
+  data: { user:
+    {
+      id: string (UUID),
+      email: string (e-mail address)
+    }
   } | null,
   error: 'Internal Server Error' | null
 }

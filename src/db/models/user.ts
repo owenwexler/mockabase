@@ -33,7 +33,7 @@ const signup = async (args: SignupArgs) => {
     const encryptedPassword = await hash(password);
     const result = await sql<User[]>`INSERT INTO users (id, email, encrypted_password) VALUES (${id}, ${email}, ${encryptedPassword}) RETURNING id, email;`;
     return {
-      data: result ? { id: result[0].id, email: result[0].email } : { id: '', email: '' },
+      data: result ? { user: { id: result[0].id, email: result[0].email } } : { user: { id: '', email: '' } },
       error: null
     };
   } catch (error) {
@@ -64,7 +64,7 @@ const login = async (args: GenericUserModelArgs) => {
 
     if (passwordsMatch) {
       return {
-        data: { id: user.id, email: user.email },
+        data: { user: { id: user.id, email: user.email } },
         error: null
       }
     } else {

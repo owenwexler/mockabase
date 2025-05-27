@@ -4,7 +4,7 @@ import fs from 'fs';
 
 const createSession = (userData: Session) => {
   try {
-    fs.writeFileSync('session.json', JSON.stringify(userData));
+    fs.writeFileSync('session.json', JSON.stringify({ user: userData }));
     return userData;
   } catch (error) {
     console.error(error);
@@ -12,7 +12,7 @@ const createSession = (userData: Session) => {
   }
 }
 
-const getCurrentSession = (): Session => {
+const getCurrentSession = (): { user: Session } => {
   try {
     const session = fs.readFileSync('session.json').toString();
     return JSON.parse(session);

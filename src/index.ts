@@ -35,8 +35,11 @@ app.post('/seed', async (c) => {
 
     const data = filteredResponses.map(obj => {
       return {
-        id: obj.value.data!.id,
-        email: obj.value.data!.email
+        user : {
+          id: obj.value.data!.user.id,
+          email: obj.value.data!.user.email
+
+        }
       }
     });
 
@@ -113,10 +116,10 @@ app.post('/login', async (c) => {
       });
     }
 
-    const session = createSession(result.data!);
+    const session = createSession(result.data!.user);
 
     return c.json({
-      data: session,
+      data: { user: session },
       error: null
     });
   } catch (error) {
@@ -158,10 +161,10 @@ app.post('/mock-oauth/:provider', async (c) => {
     });
   }
 
-  const session = createSession(result.data!);
+  const session = createSession(result.data!.user);
 
   return c.json({
-    data: session,
+    data: { user: session },
     error: null
   });
 });
@@ -203,6 +206,7 @@ app.get('/get-current-session', async (c) => {
 
 app.delete('/delete-user/:userId', async (c) => {
   const { userId } = c.req.param();
+  console.log(`POST /delete-user/${userId}`)
 
   try {
     await deleteUser(userId);

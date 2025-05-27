@@ -100,6 +100,7 @@ const { id, email, password } = args;
 }
 
 const testDeleteUser = async (userId: string) => {
+  console.log('testDeleteUser function run')
   try {
     const response = await typedFetch<ReturnObject>({
       url: `${hostUrl}/delete-user/${userId}`,
