@@ -15,11 +15,13 @@ This is not a commercial project and I'm not making money from it.  The name Sup
 # How does Mockabase work?
 Mockabase uses a local database with a users table that loosely mocks the ```auth.users``` table in Supabase.  There are various routes for all expected user functions (including a mock "OAuth" login and signup) detailed in the routes section below.  "Sessions" are currently handled with a JSON file at the root of the project called ```session.json```, which is either null if logged out or has the id and e-mail of the current user if logged in.  I consider this an acceptable minimal way to mock sessions for testing and development purposes.
 
-# Major breaking change in version 2.0
+# Major breaking changes in version 2.0
 ```signup```, ```login```, and ```get-current-session``` routes now return objects in the following format:
 ```{ data: { user: User } | null, error: error | null } ```
 
 This more closely mirrors the Supabase API.
+
+Errors are now returned as Supabase-like error objects instead of strings, to more closely mirror the Supabase API.  For a complete reference of all error objects returned by Mockabase, see the ```src/data/errors.ts``` file.
 
 # Installation
 
@@ -127,7 +129,7 @@ Returns:
     }
   } | null,
   error
-  : 'Internal Server Error' | 'User Already Exists' | null }
+  : errors.userAlreadyExists | errors.internalServerError | null }
 ```
 
 ### **POST** /login
@@ -150,9 +152,9 @@ Returns:
     }
   } | null,
   error:
-    'Internal Server Error' |
-    'Wrong Password' |
-    'User Already Exists' |
+    errors.internalServerError |
+    errors.invalidCredentials |
+    errors.userNotFound |
     null
 }
 ```
@@ -172,7 +174,7 @@ Returns:
       email: string (e-mail address)
     }
   } | null,
-  error: 'Internal Server Error' | null
+  error: errors.internalServerError | null
 }
 ```
 
@@ -219,7 +221,7 @@ Returns:
     id: string (UUID),
     email: string (e-mail address)
   } | null,
-  error: 'Internal Server Error' | null
+  error: errors.internalServerError | null
 }
 ```
 
@@ -234,7 +236,7 @@ Returns:
 ```
 {
   data: null,
-  error: 'Internal Server Error' | null
+  error: errors.internalServerError | null
 }
 ```
 
@@ -250,7 +252,7 @@ Returns:
 ```
 {
   data: null,
-  error: 'Internal Server Error' | null
+  error: errors.internalServerError | null
 }
 ```
 
@@ -263,7 +265,7 @@ Returns:
 ```
 {
   data: null,
-  error: 'Internal Server Error' | null
+  error: errors.internalServerError | null
 }
 ```
 
