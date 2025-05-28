@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { checkUserExists, deleteAllUsers, deleteMultipleUsers, deleteUser, login, signup } from './db/models/user';
 import { createSession, getCurrentSession, removeSession } from './session/sessionFunctions';
 import { getTypedEmailPasswordFromBody } from './helper/getTypedEmailPasswordFromBody';
+import { errors } from './data/errors';
 
 const { PORT, MOCK_OAUTH_EMAIL, MOCK_OAUTH_PASSWORD } = process.env;
 
@@ -70,10 +71,10 @@ app.post('/signup', async (c) => {
   try {
     const result = await signup({ id, email, password });
 
-    if (result.error && result.error === 'User Already Exists') {
+    if (result.error && result.error.code === errors.userAlreadyExists.code) {
       return c.json({
         data: null,
-        error: 'User Already Exists'
+        error: errors.userAlreadyExists
       });
     }
 
@@ -85,7 +86,7 @@ app.post('/signup', async (c) => {
     console.error(error);
     return c.json({
       data: null,
-      error: 'Internal Server Error'
+      error: errors.userAlreadyExists
     });
   }
 });
@@ -102,17 +103,17 @@ app.post('/login', async (c) => {
   try {
     const result = await login({ email, password });
 
-    if (result.error && result.error === 'Wrong Password') {
+    if (result.error && result.error.code === errors.invalidCredentials.code) {
       return c.json({
         data: null,
-        error: 'Wrong Password'
+        error: errors.invalidCredentials
       });
     }
 
-    if (result.error && result.error === 'User Not Found') {
+    if (result.error && result.error.code === errors.userNotFound.code) {
       return c.json({
         data: null,
-        error: 'User Not Found'
+        error: errors.userNotFound
       });
     }
 
@@ -126,7 +127,7 @@ app.post('/login', async (c) => {
     console.error(error);
     return c.json({
       data: null,
-      error: 'Internal Server Error'
+      error: errors.internalServerError
     });
   }
 });
@@ -147,14 +148,14 @@ app.post('/mock-oauth/:provider', async (c) => {
 
   const result = await login({ email: MOCK_OAUTH_EMAIL, password: MOCK_OAUTH_PASSWORD });
 
-  if (result.error && result.error === 'Wrong Password') {
+  if (result.error && result.error.code === errors.invalidCredentials.code) {
     return c.json({
       data: null,
-      error: 'Wrong Password'
+      error: errors.invalidCredentials
     });
   }
 
-  if (result.error && result.error === 'User Not Found') {
+  if (result.error && result.error.code === errors.userNotFound.code) {
     return c.json({
       data: null,
       error: 'User Not Found'
@@ -182,7 +183,7 @@ app.post('/logout', async (c) => {
     console.error(error);
     return c.json({
       data: null,
-      error: 'Internal Server Error'
+      error: errors.internalServerError
     });
   }
 });
@@ -199,7 +200,7 @@ app.get('/get-current-session', async (c) => {
     console.error(error);
     return c.json({
       data: null,
-      error: 'Internal Server Error'
+      error: errors.internalServerError
     });
   }
 });
@@ -219,7 +220,7 @@ app.delete('/delete-user/:userId', async (c) => {
     console.error(error);
     return c.json({
       data: null,
-      error: 'Internal Server Error'
+      error: errors.internalServerError
     });
   }
 });
@@ -245,7 +246,7 @@ app.delete('/delete-multiple-users', async (c) => {
     console.error(error);
     return c.json({
       data: null,
-      error: 'Internal Server Error'
+      error: errors.internalServerError
     });
   }
 });
@@ -262,7 +263,7 @@ app.delete('/clear', async (c) => {
     console.error(error);
     return c.json({
       data: null,
-      error: 'Internal Server Error'
+      error: errors.internalServerError
     });
   }
 });

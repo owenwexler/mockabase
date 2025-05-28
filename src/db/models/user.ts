@@ -4,7 +4,10 @@ import sql from '../db';
 import { blankUser } from '../../data/blankObjects';
 import type { User } from '../../typedefs/User';
 import { v4 as uuidv4 } from 'uuid';
+import { errors } from '../../data/errors';
+import type { ReturnObject } from '../../typedefs/ReturnObject';
 import type { ErrorType } from '../../typedefs/ErrorType';
+import type { Session } from '../../typedefs/Session';
 
 interface GenericUserModelArgs {
   email: string;
@@ -15,7 +18,7 @@ interface SignupArgs extends GenericUserModelArgs {
   id?: string;
 }
 
-const signup = async (args: SignupArgs) => {
+const signup = async (args: SignupArgs): Promise<ReturnObject> => {
   const { email, password } = args;
 
   const id = args.id ? args.id : uuidv4();
@@ -25,7 +28,7 @@ const signup = async (args: SignupArgs) => {
   if (userExists) {
     return {
       data: null,
-      error: 'User Already Exists'
+      error: errors.userAlreadyExists
     };
   }
 
@@ -40,21 +43,21 @@ const signup = async (args: SignupArgs) => {
     console.error(error);
     return {
       data: null,
-      error: 'Internal Server Error'
+      error: errors.internalServerError
     }
   }
 }
 
-const login = async (args: GenericUserModelArgs) => {
+const login = async (args: GenericUserModelArgs): Promise<ReturnObject> => {
   const { email, password } = args;
 
   try {
     const userResponse = await getUser(email);
 
-    if (userResponse.error && userResponse.error == 'User Not Found') {
+    if (userResponse.error && userResponse.error.code == 'user_not_found') {
       return {
         data: null,
-        error: 'User Not Found'
+        error: errors.userNotFound
       }
     }
 
@@ -70,7 +73,7 @@ const login = async (args: GenericUserModelArgs) => {
     } else {
       return {
         data: null,
-        error: 'Wrong Password'
+        error: errors.invalidCredentials
       }
     }
   } catch (error) {
@@ -79,14 +82,14 @@ const login = async (args: GenericUserModelArgs) => {
   }
 }
 
-const getUser = async (email: string): Promise<{ data: User | null, error: ErrorType | null} > => {
+const getUser = async (email: string): Promise<{ data: { id: string; email: string;  encryptedPassword: string } | null, error: ErrorType | null }> => {
   try {
     const response = await sql<User[]>`SELECT id, email, encrypted_password AS "encryptedPassword" FROM users WHERE email = ${email};`;
 
     if (response.length <= 0) {
       return {
         data: null,
-        error: 'User Not Found'
+        error: errors.userNotFound
       }
     }
 
@@ -98,7 +101,7 @@ const getUser = async (email: string): Promise<{ data: User | null, error: Error
     console.error(error);
     return {
       data: null,
-      error: 'Internal Server Error'
+      error: errors.internalServerError
     }
   }
 }
@@ -114,7 +117,7 @@ const checkUserExists = async (email: string): Promise<boolean> => {
   }
 }
 
-const deleteUser = async (id: string) => {
+const deleteUser = async (id: string): Promise<ReturnObject> => {
   try {
     await sql`DELETE FROM users WHERE id = ${id}`;
 
@@ -127,7 +130,7 @@ const deleteUser = async (id: string) => {
 
     return {
       data: null,
-      error: 'Internal Server Error'
+      error: errors.internalServerError
     }
   }
 }
@@ -145,7 +148,7 @@ const deleteMultipleUsers = async (ids: string[]) => {
 
     return {
       data: null,
-      error: 'Internal Server Error'
+      error: errors.internalServerError
     }
   }
 }
@@ -163,7 +166,7 @@ const deleteAllUsers = async () => {
 
     return {
       data: null,
-      error: 'Internal Server Error'
+      error: errors.internalServerError
     }
   }
 }

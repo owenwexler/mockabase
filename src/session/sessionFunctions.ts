@@ -1,5 +1,4 @@
 import type { Session } from "../typedefs/Session";
-import type { User } from "../typedefs/User";
 import fs from 'fs';
 
 const createSession = (userData: Session) => {

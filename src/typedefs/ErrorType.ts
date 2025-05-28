@@ -1,1 +1,10 @@
-export type ErrorType = 'Internal Server Error' | 'User Already Exists' | 'Wrong Password' | 'User Not Found' | 'No OAuth Found';
+interface ErrorType {
+  code: string;
+  message: string;
+  details: string;
+  hint: string;
+}
+
+export type {
+  ErrorType
+}

@@ -1,17 +1,18 @@
-import { test, describe, expect, beforeEach, beforeAll, afterAll } from 'vitest';
+import { test, describe, expect, beforeAll, afterAll } from 'vitest';
 import { seedDB, testDeleteUser, testGetSession, testLogin, testLogout, testMockOAuthLogin, testSignUp } from './testFunctions/testFunctions';
 import { seedData } from '../src/data/seedData';
 import { testEnv } from './testEnv/testEnv';
 import { newTestUser } from '../src/data/newTestUser';
 
 import type { ReturnObject } from '../src/typedefs/ReturnObject';
+import { errors } from '../src/data/errors';
 
 const { mockOAuthEmail } = testEnv;
 
 const emptySessionObject: ReturnObject = { data: null, error: null };
-const wrongPasswordErrorObject: ReturnObject = { data: null, error: 'Wrong Password' };
-const nonexistentUserErrorObject: ReturnObject = { data: null, error: 'User Not Found' };
-const userAlreadyExistsErrorObject: ReturnObject = { data: null, error: 'User Already Exists' };
+const wrongPasswordErrorObject: ReturnObject = { data: null, error: errors.invalidCredentials };
+const nonexistentUserErrorObject: ReturnObject = { data: null, error: errors.userNotFound };
+const userAlreadyExistsErrorObject: ReturnObject = { data: null, error: errors.userAlreadyExists };
 
 const loginTestCases = seedData.map(obj => {
   return {
