@@ -274,11 +274,13 @@ Returns:
 The Mockabase client is a thin abstraction over some of the API routes used most by frontends that mimics the Supabase client's API.
 
 ## Client Installation
-Move the following files into their corresponding folders in your frontend project.
-```mockabaseClient.ts``` - the main client file
-```typedFetch.ts``` - typedFetch function, a type-safe wrapper around the fetch API used by the Mockabase Client
-```ReturnObject.ts``` - the ReturnObject type used by most routes
-```OAuthProvider.ts``` - the OAuthProvider type used by the OAuth routes
+Move the following files into their corresponding folders in your frontend project:
+```
+  mockabaseClient.ts - the main client file
+  typedFetch.ts - typedFetch function, a type-safe wrapper around the fetch API used by the Mockabase Client
+  ReturnObject.ts - the ReturnObject type used by most routes
+  OAuthProvider.ts - the OAuthProvider type used by the OAuth routes
+```
 
 ## Client Usage
 Create a client with the following line of code:
