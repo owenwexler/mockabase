@@ -6,7 +6,7 @@ interface CreateMockbaseClientArgs {
   mockabaseUrl: string;
 }
 
-const createMockabaseClient = (args: CreateMockbaseClientArgs) {
+const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
   const { mockabaseUrl } = args;
   return {
     url: mockabaseUrl,
@@ -33,8 +33,6 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) {
       return response;
     },
     signInWithPassword: async function (args: { email: string, password: string }) {
-      const { email, password } = args;
-
       try {
         const session = await typedFetch<ReturnObject>({
           url: `${mockabaseUrl}/login`,

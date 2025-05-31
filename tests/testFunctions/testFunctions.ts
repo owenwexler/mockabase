@@ -4,7 +4,7 @@ import type { ReturnObject } from "../../src/typedefs/ReturnObject";
 
 import { testEnv } from "../testEnv/testEnv";
 
-const { hostUrl, mockOAuthEmail, mockOAuthPassword } = testEnv;
+const { hostUrl } = testEnv;
 
 const seedIds = seedData.map(obj => obj.id);
 
@@ -35,72 +35,7 @@ const seedDB = async () => {
   }
 }
 
-const testLogin = async (args: { email: string, password: string }) => {
-  try {
-    const session = await typedFetch<ReturnObject>({
-      url: `${hostUrl}/login`,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(args)
-    });
-
-    return session;
-  } catch (error) {
-    console.error(error);
-    throw error;
-  }
-}
-
-const testGetSession = async () => {
-  const response = await typedFetch<ReturnObject>({
-    url: `${hostUrl}/get-current-session`,
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  });
-
-  return response;
-}
-
-const testLogout = async () => {
-  const response = await typedFetch<ReturnObject>({
-    url: `${hostUrl}/logout`,
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  });
-}
-
-const testSignUp = async (args: { id: string, email: string, password: string }) => {
-const { id, email, password } = args;
-
-  try {
-    const response = await typedFetch<ReturnObject>({
-      url: `${hostUrl}/signup`,
-      body: JSON.stringify({
-        id,
-        email,
-        password
-      }),
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    return response;
-  } catch (error) {
-    console.error(error);
-    throw error;
-  }
-}
-
 const testDeleteUser = async (userId: string) => {
-  console.log('testDeleteUser function run')
   try {
     const response = await typedFetch<ReturnObject>({
       url: `${hostUrl}/delete-user/${userId}`,
@@ -117,29 +52,7 @@ const testDeleteUser = async (userId: string) => {
   }
 }
 
-const testMockOAuthLogin = async () => {
-  try {
-    const response = await typedFetch<ReturnObject>({
-      url: `${hostUrl}/mock-oauth/google`,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    return response;
-  } catch (error) {
-    console.error(error);
-    throw error;
-  }
-}
-
 export {
   seedDB,
-  testLogin,
-  testGetSession,
-  testSignUp,
-  testLogout,
   testDeleteUser,
-  testMockOAuthLogin
 }
