@@ -47,7 +47,7 @@ You must have the following installed locally to use Mockabase:
 
 9.  Run the tests using ```npm run test``` and confirm that they all pass.
 
-## Tests
+# Tests
 Mockabase has a comprehensive test suite written with Vitest and covering most of Mockabase' core functions.  Not all code is unit-tested, but almost all core functions except the ```/clear``` endpoint are covered by the tests.  Any new major features contributed must be accompanied by tests confirming they work and must not break any existing tests unless the feature in question is a major breaking feature.  In this case, the way the tests were broken and had to be refactored must be documented.
 
 ## Suggsted Usage
@@ -73,7 +73,7 @@ if (process.env.NODE_ENV === 'testing') {
 }
 ```
 
-## Directory structure
+# Directory structure
 ```
 mockabase
 ├── sql - the schema file used to build the local databse
@@ -101,7 +101,7 @@ mockabase
 ├── tsconfig.json - TypeScript config
 ```
 
-## Routes/Endpoints
+# Routes/Endpoints
 Generally, the response for each route that returns responses is in the { data, error } format also used by Supabase.
 
 POST routes that accept body data can either receive it as a ```application/x-www-form-urlencoded```,  ```multipart/form-data```, or ```application/json``` Content-Type, except for the ```/seed``` and ```/delete-multiple-users``` routes, which accept only ```application/json``` as the Content-Type.  Hono uses different parsing functions for a form data body and a raw JSON body, which is why this distinction must be made.
@@ -269,7 +269,75 @@ Returns:
 }
 ```
 
-## Stack
+# Mockabase Client
+
+The Mockabase client is a thin abstraction over some of the API routes used most by frontends that mimics the Supabase client's API.
+
+## Client Installation
+Move the following files into their corresponding folders in your frontend project.
+```mockabaseClient.ts``` - the main client file
+```typedFetch.ts``` - typedFetch function, a type-safe wrapper around the fetch API used by the Mockabase Client
+```ReturnObject.ts``` - the ReturnObject type used by most routes
+```OAuthProvider.ts``` - the OAuthProvider type used by the OAuth routes
+
+## Client Usage
+Create a client with the following line of code:
+```
+const mockabaseClient = createMockabaseClient({ mockabaseUrl: 'FILL_ME_IN });
+```
+
+The Mockabase client takes in the URL on which you have the Mockabase server running and returns an object with several functions that mimic the Supabase client API and correspond to Mockabase routes.
+
+Returns the following object with several functions that mirror the above API routes, taking in the same inputs and returning the same data.
+
+```
+{
+  url: string;
+  getUser(): Function - Corresponding route: /get-user-session,
+  getSession(): Function - Corresponding route: /get-user-session,
+  signInWithPassword(args: { email: string, password: string }): Function - Corresponding route: /login,
+  signInWithOAuth(args: { provider: OAuthProvider }): Function - Corresponding route: /mock-oauth,
+  signOut(): Function - Corresponding route: /logout,
+  signUpWithPassword(args: { id: string, email: string, password: string }): Function - Corresponding route: /signup,
+  signUpWithOAuth(args: { provider: OAuthProvider }): Function - Corresponding route: /mock-oauth,
+}
+```
+
+These functions are called within your frontend as you would do with the Supabase client:
+
+Example:
+```
+const login = async (args: { email: string, password: string }) => {
+  const mockabaseClient = createMockabaseClient({ mockabaseUrl: process.env.MOCKABASE_URL });
+
+  try {
+    const response = await mockabaseClient.signInWithPassword(args);
+
+    const { data, error } = response;
+
+    if (error) {
+      console.error(error);
+      return {
+        data: null,
+        error
+      }
+    }
+
+    return {
+      data,
+      error: null
+    }
+  } catch (error) {
+    console.error(error);
+    return {
+      data: null,
+      error: errors.internalServerError
+    }
+  }
+}
+```
+
+# Stack
 * **Language**: [TypeScript](https://www.typescriptlang.org/)
 * **Runtime**: [Node](https://nodejs.org/)
 * **Database**: [PostgreSQL](https://www.postgresql.org/)
