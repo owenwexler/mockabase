@@ -283,14 +283,13 @@ Move the following files into their corresponding folders in your frontend proje
 ## Client Usage
 Create a client with the following line of code:
 ```
-const mockabaseClient = createMockabaseClient({ mockabaseUrl: 'FILL_ME_IN });
+const mockabaseClient = createMockabaseClient({ mockabaseUrl: 'FILL_ME_IN' });
 ```
 
 The Mockabase client takes in the URL on which you have the Mockabase server running and returns an object with several functions that mimic the Supabase client API and correspond to Mockabase routes.
 
 Returns the following object with several functions that mirror the above API routes, taking in the same inputs and returning the same data.
 
-```
 {
   url: string;
   getUser(): Function - Corresponding route: /get-user-session,
@@ -301,7 +300,6 @@ Returns the following object with several functions that mirror the above API ro
   signUpWithPassword(args: { id: string, email: string, password: string }): Function - Corresponding route: /signup,
   signUpWithOAuth(args: { provider: OAuthProvider }): Function - Corresponding route: /mock-oauth,
 }
-```
 
 These functions are called within your frontend as you would do with the Supabase client:
 
