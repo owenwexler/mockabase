@@ -290,6 +290,7 @@ The Mockabase client takes in the URL on which you have the Mockabase server run
 
 Returns the following object with several functions that mirror the above API routes, taking in the same inputs and returning the same data.
 
+```
 {
   url: string;
   getUser(): Function - Corresponding route: /get-user-session,
@@ -300,6 +301,7 @@ Returns the following object with several functions that mirror the above API ro
   signUpWithPassword(args: { id: string, email: string, password: string }): Function - Corresponding route: /signup,
   signUpWithOAuth(args: { provider: OAuthProvider }): Function - Corresponding route: /mock-oauth,
 }
+```
 
 These functions are called within your frontend as you would do with the Supabase client:
 
