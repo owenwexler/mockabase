@@ -47,6 +47,8 @@ You must have the following installed locally to use Mockabase:
 
 9.  Run the tests using ```npm run test``` and confirm that they all pass.
 
+10.  Running the tests leaves three users used to test a few of my other open source apps in the database which is why they are left in.  They are cleared and re-seeded at the beginning of every test run and left in at the end.
+
 # Tests
 Mockabase has a comprehensive test suite written with Vitest and covering most of Mockabase' core functions.  Not all code is unit-tested, but almost all core functions except the ```/clear``` endpoint are covered by the tests.  Any new major features contributed must be accompanied by tests confirming they work and must not break any existing tests unless the feature in question is a major breaking feature.  In this case, the way the tests were broken and had to be refactored must be documented.
 
@@ -279,6 +281,7 @@ Copy the following files into their corresponding folders in your frontend proje
   mockabaseClient.ts - the main client file
   typedFetch.ts - typedFetch function, a type-safe wrapper around the fetch API used by the Mockabase Client
   ReturnObject.ts - the ReturnObject type used by most routes
+  Session.ts - the Session type used by the ReturnObject type
   OAuthProvider.ts - the OAuthProvider type used by the OAuth routes
 ```
 
