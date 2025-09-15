@@ -60,5 +60,11 @@ export const errors: ErrorsObject = {
     message: 'Session Not Found',
     details: 'Session to which the API request relates has expired.',
     hint: 'Try logging back in'
+  },
+  missingInputs: {
+    code: 'missing_inputs',
+    message: 'Missing Inputs',
+    details: 'Required inputs are missing',
+    hint: 'Check that all require inputs are passed in to the function'
   }
 };
