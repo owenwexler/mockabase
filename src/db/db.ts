@@ -8,11 +8,13 @@ db.exec(`
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     encrypted_password TEXT NOT NULL,
-    email_confirmed_at TEXT
+    email_confirmed_at TEXT,
     created_at TEXT,
     updated_at TEXT
   );
 `);
+// Enable WAL journal mode for better performance (optional but recommended)
+db.pragma('journal_mode = WAL');
 
 export default db;
 // import postgres from 'postgres';

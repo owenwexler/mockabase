@@ -30,3 +30,5 @@ lerna-debug.log*
 
 # SQLite3 DB
 mockabase.sqlite
+mockabase.sqlite-shm
+mockabase.sqlite-wal

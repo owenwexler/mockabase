@@ -42,7 +42,6 @@ const signup = async (args: SignupArgs): Promise<ReturnObject> => {
 
     const query = db.prepare('INSERT INTO users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) RETURNING id, email;');
     const result = query.run(id, email, encryptedPassword, emailConfirmedAt, createdAt, updatedAt);
-    console.log(result);
 
     return {
       data: result ? { user: { id, email } } : { user: { id: '', email: '' } },
@@ -94,10 +93,10 @@ const login = async (args: GenericUserModelArgs): Promise<ReturnObject> => {
 const getUser = async (email: string): Promise<{ data: { id: string; email: string;  encryptedPassword: string } | null, error: ErrorType | null }> => {
   try {
     const query = db.prepare('SELECT id, email, encrypted_password AS "encryptedPassword" FROM users WHERE email = ?');
-    const result = query.run(email);
-    const user: User | undefined = result.get(1) as User | undefined; // Type assertion for safety
+    const result = query.get(email);
+    const user: User | undefined = result as User | undefined; // Type assertion for safety
 
-    if (response.length <= 0) {
+    if (!user || user.id === '') {
       return {
         data: null,
         error: errors.userNotFound
@@ -105,7 +104,7 @@ const getUser = async (email: string): Promise<{ data: { id: string; email: stri
     }
 
     return {
-      data: response ? response[0] : blankUser,
+      data: user ? user : blankUser,
       error: null
     }
   } catch (error) {
@@ -119,9 +118,12 @@ const getUser = async (email: string): Promise<{ data: { id: string; email: stri
 
 const checkUserExists = async (email: string): Promise<boolean> => {
   try {
-    const response = await sql`SELECT DISTINCT email FROM users WHERE email = ${email};`;
+    const query = db.prepare('SELECT DISTINCT email FROM users WHERE email = ?;');
 
-    return response.length > 0;
+    const result = query.get(email);
+    const user: User | undefined = result as User | undefined;
+
+    return user !== undefined;
   } catch (error) {
     console.error(error);
     return false;
@@ -130,7 +132,9 @@ const checkUserExists = async (email: string): Promise<boolean> => {
 
 const deleteUser = async (id: string): Promise<ReturnObject> => {
   try {
-    await sql`DELETE FROM users WHERE id = ${id}`;
+    const query = db.prepare('DELETE FROM users WHERE id = ?;');
+
+    const result = query.run(id);
 
     return {
       data: null,
@@ -147,13 +151,42 @@ const deleteUser = async (id: string): Promise<ReturnObject> => {
 }
 
 const deleteMultipleUsers = async (ids: string[]) => {
-  try {
-    await sql`DELETE FROM users WHERE id IN (SELECT id FROM users WHERE id = ANY(${ids}::uuid[]));`;
-
+// Preserve original input checks/early returns
+  if (!Array.isArray(ids) || ids.length === 0) {
     return {
-      data: null,
-      error: null
-    }
+      data: { deleted: 0 },
+      error: errors.missingInputs
+    };
+  }
+
+  // Conservative batch size to stay under SQLite's variable limit.
+  // If you know your build sets a different SQLITE_MAX_VARIABLE_NUMBER,
+  // adjust this accordingly.
+  const BATCH_SIZE = 500;
+
+  // Helper to chunk the input
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+    chunks.push(ids.slice(i, i + BATCH_SIZE));
+  }
+
+  try {
+    let totalDeleted = 0;
+
+    // Wrap all batched statements in a single transaction
+    const runTxn = db.transaction(() => {
+      for (const chunk of chunks) {
+        const placeholders = chunk.map(() => '?').join(',');
+        const sql = `DELETE FROM users WHERE id IN (${placeholders});`;
+        const stmt = db.prepare(sql);
+        const info = stmt.run(...chunk);
+        totalDeleted += info.changes ?? 0;
+      }
+    });
+
+    runTxn(); // execute the transaction
+
+    return { data: { deleted: totalDeleted }, error: null };
   } catch (error) {
     console.error(error);
 
@@ -166,7 +199,9 @@ const deleteMultipleUsers = async (ids: string[]) => {
 
 const deleteAllUsers = async () => {
   try {
-    await sql`DELETE FROM users;`;
+    const query = db.prepare('DELETE FROM user;');
+
+    const result = query.run();
 
     return {
       data: null,
