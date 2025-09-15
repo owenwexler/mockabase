@@ -1,6 +1,6 @@
 # Mockabase
 
-Mockabase is a minimal open-source local offline mock authentication service that approximately mocks the Supabase API for use in automated testing and development.  I made Mockabase because I personally found Supabase hard to test with in development and found that I needed a mock service that would allow me to consistently create and delete test users without having several different real email addresses.  I personally believe it is ok to mock Supabase when doing automated tests of an app's functionality, as automated testing of live Supabase responses would be tantamount to testing Supabase itself, which the Supabase team has covered.  That said, of course, I recommend to do some manual acceptance testing of your app with live Supabase responses too.
+Mockabase is a minimal open-source local offline mock authentication service that approximately mocks the Supabase API for use in automated testing and development.  I made Mockabase because I personally found Supabase hard to test with in development and found that I needed a mock service that would allow me to consistently create and delete test users without having several different real email addresses.  I personally believe it is ok to mock Supabase when doing automated tests of an app's functionality, as automated testing of live Supabase responses would be tantamount to testing Supabase itself, which the Supabase team has covered.  That said, of course, I recommend doing some manual acceptance testing of your app with live Supabase responses too.
 
 ## Disclaimers
 
@@ -13,7 +13,10 @@ I aimply wrote this to solve a problem I had with testing Supabase auth in my ap
 This is not a commercial project and I'm not making money from it.  The name Supabase belongs to its creators.
 
 # How does Mockabase work?
-Mockabase uses a local database with a users table that loosely mocks the ```auth.users``` table in Supabase.  There are various routes for all expected user functions (including a mock "OAuth" login and signup) detailed in the routes section below.  "Sessions" are currently handled with a JSON file at the root of the project called ```session.json```, which is either null if logged out or has the id and e-mail of the current user if logged in.  I consider this an acceptable minimal way to mock sessions for testing and development purposes.
+Mockabase uses an embedded SQLite database with a users table that loosely mocks the ```auth.users``` table in Supabase.  There are various routes for all expected user functions (including a mock "OAuth" login and signup) detailed in the routes section below.  "Sessions" are currently handled with a JSON file at the root of the project called ```session.json```, which is either null if logged out or has the id and e-mail of the current user if logged in.  I consider this an acceptable minimal way to mock sessions for testing and development purposes.
+
+## Why SQLite and not PostgreSQL?
+Although Supabase uses Postgres under the hood, as of September 2025, Mockabase uses an embedded SQLite database for simplicity and portability.  Any relevant Postgres-exclusive functions such as timestamps and UUIDs are handled within Mockabase's code rather than in the database.
 
 # Major breaking changes in version 2.0
 ```signup```, ```login```, and ```get-current-session``` routes now return objects in the following format:
@@ -27,27 +30,24 @@ Errors are now returned as Supabase-like error objects instead of strings, to mo
 
 You must have the following installed locally to use Mockabase:
 * Node
-* POSTGRESQL
 
-1.  Make sure you have [Node](https://nodejs.org/) and [Postgres](https://www.postgresql.org/) installed locally.
+1.  Make sure you have [Node](https://nodejs.org/) installed locally.
 
 2.  Fork and/or clone the repository.
 
 3.  Run ```npm install``` to install all dependencies.
 
-4.  Set up a local Postgres database on your local machine according to the schema file in ```sql/schema.sql```.
+4.  Create a ```.env``` file and set up all environment variables according to the ```.env.example``` file.  For the PORT number, I recommend using a port number you don't use for any other servers or services, since you'll likely be running Mockabase alongside of many other services.
 
-5.  Create a ```.env``` file and set up all environment variables according to the ```.env.example``` file.  For the PORT number, I recommend using a port number you don't use for any other servers or services, since you'll likely be running Mockabase alongside of many other services.
+5.  Create a ```testEnv.ts``` file in the ```tests/testEnv``` folder and set up all the ```testEnv``` variables according to the ```testEnv.example.ts``` file.  This is necessary because Vitest can not read ```process.env```.
 
-6.  Create a ```testEnv.ts``` file in the ```tests/testEnv``` folder and set up all the ```testEnv``` variables according to the ```testEnv.example.ts``` file.  This is necessary because Vitest can not read ```process.env```.
+6.  Create a user using the ```/signup``` route (very important to use the ```/signup``` route so you get a properly hashed password) for use with the mock OAuth function and fill out the corresponding environment variables in both ```.env``` and ```testEnv.ts``` accordingly.
 
-7.  Create a user using the ```/signup``` route (very important to use the ```/signup``` route so you get a properly hashed password) for use with the mock OAuth function and fill out the corresponding environment variables in both ```.env``` and ```testEnv.ts``` accordingly.
+7.  Run the server using ```npm run dev```.
 
-8.  Run the server using ```npm run dev```.
+8.  Run the tests using ```npm run test``` and confirm that they all pass.
 
-9.  Run the tests using ```npm run test``` and confirm that they all pass.
-
-10.  Running the tests leaves three users used to test a few of my other open source apps in the database which is why they are left in.  They are cleared and re-seeded at the beginning of every test run and left in at the end.
+9.  Running the tests leaves three users used to test a few of my other open source apps in the database which is why they are left in.  They are cleared and re-seeded at the beginning of every test run and left in at the end.
 
 # Tests
 Mockabase has a comprehensive test suite written with Vitest and covering most of Mockabase' core functions.  Not all code is unit-tested, but almost all core functions except the ```/clear``` endpoint are covered by the tests.  Any new major features contributed must be accompanied by tests confirming they work and must not break any existing tests unless the feature in question is a major breaking feature.  In this case, the way the tests were broken and had to be refactored must be documented.
