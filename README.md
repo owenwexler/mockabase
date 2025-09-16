@@ -8,7 +8,7 @@ Mockabase is a minimal open-source local offline mock authentication service tha
 
 I am not affiliated with Supabase or the Supbase team in any way.  This service is not condoned, supported, or endorsed by Supabase or the Supabase team in any way.
 
-I aimply wrote this to solve a problem I had with testing Supabase auth in my apps consistently and decided to open-source it in the hope that it would help other developers solve similar problems.  That's all.
+I simply wrote this to solve a problem I had with testing Supabase auth in my apps consistently and decided to open-source it in the hope that it would help other developers solve similar problems.  That's all.
 
 This is not a commercial project and I'm not making money from it.  The name Supabase belongs to its creators.
 
