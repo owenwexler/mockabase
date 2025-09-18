@@ -217,6 +217,30 @@ const deleteAllUsers = async () => {
   }
 }
 
+const changeUserPassword = async (user: User, newPassword: string) => {
+  try {
+    const encryptedNewPassword = await hash(newPassword);
+    const updatedAt = toPostgresTimestampUTC(new Date());
+    const encryptedPasswordQuery = db.prepare('UPDATE users SET encrypted_password = ? WHERE id = ?;');
+    const encryptedPasswordResult = encryptedPasswordQuery.run(encryptedNewPassword, user.id);
+
+    const updatedAtQuery = db.prepare('UPDATE users SET updated_at = ? WHERE id = ?;');
+    const updatedAtResult = updatedAtQuery.run(updatedAt, user.id);
+
+    return {
+      data: null,
+      error: null
+    }
+  } catch (error) {
+    console.error(error);
+
+    return {
+      data: null,
+      error: errors.internalServerError
+    }
+  }
+}
+
 export {
   signup,
   login,
@@ -224,5 +248,6 @@ export {
   checkUserExists,
   deleteUser,
   deleteMultipleUsers,
-  deleteAllUsers
+  deleteAllUsers,
+  changeUserPassword
 }

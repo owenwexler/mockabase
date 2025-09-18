@@ -3,10 +3,11 @@ import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { v4 as uuidv4 } from 'uuid';
 
-import { checkUserExists, deleteAllUsers, deleteMultipleUsers, deleteUser, login, signup } from './db/models/user';
+import { changeUserPassword, checkUserExists, deleteAllUsers, deleteMultipleUsers, deleteUser, login, signup } from './db/models/user';
 import { createSession, getCurrentSession, removeSession } from './session/sessionFunctions';
 import { getTypedEmailPasswordFromBody } from './helper/getTypedEmailPasswordFromBody';
 import { errors } from './data/errors';
+import type { User } from './typedefs/User';
 
 const { PORT, MOCK_OAUTH_EMAIL, MOCK_OAUTH_PASSWORD } = process.env;
 
@@ -124,6 +125,51 @@ app.post('/login', async (c) => {
     });
   } catch (error) {
     console.error(error);
+    return c.json({
+      data: null,
+      error: errors.internalServerError
+    });
+  }
+});
+
+app.post('/change-password', async (c) => {
+  console.log('POST /change-password');
+  const contentType = c.req.header('Content-Type');
+
+  // use c.req.json() if the content type is 'application/json' and c.req.parseBody() otherwise
+  const body = contentType === 'application/json' ? await c.req.json() : await c.req.parseBody();
+
+  const id = body['id'].toString();
+  const email = body['email'].toString();
+  const newPassword = body['newPassword'].toString();
+
+  try {
+    const session = getCurrentSession();
+
+    if (!session || session.user.email !== email) {
+      console.error(errors.invalidCredentials);
+      return c.json({
+        data: null,
+        error: errors.invalidCredentials
+      });
+    }
+
+    const changePasswordResult = await changeUserPassword(session.user as User, newPassword);
+
+    if (changePasswordResult.error) {
+      console.error(changePasswordResult.error);
+      return c.json({
+        data: null,
+        error: errors.internalServerError
+      });
+    }
+
+    return c.json({
+      data: null,
+      error: null
+    });
+  } catch (error) {
+  	console.error(error);
     return c.json({
       data: null,
       error: errors.internalServerError
