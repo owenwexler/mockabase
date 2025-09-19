@@ -217,15 +217,15 @@ const deleteAllUsers = async () => {
   }
 }
 
-const changeUserPassword = async (user: User, newPassword: string) => {
+const changeUserPassword = async (email: string, newPassword: string) => {
   try {
     const encryptedNewPassword = await hash(newPassword);
     const updatedAt = toPostgresTimestampUTC(new Date());
-    const encryptedPasswordQuery = db.prepare('UPDATE users SET encrypted_password = ? WHERE id = ?;');
-    const encryptedPasswordResult = encryptedPasswordQuery.run(encryptedNewPassword, user.id);
+    const encryptedPasswordQuery = db.prepare('UPDATE users SET encrypted_password = ? WHERE email = ?;');
+    const encryptedPasswordResult = encryptedPasswordQuery.run(encryptedNewPassword, email);
 
-    const updatedAtQuery = db.prepare('UPDATE users SET updated_at = ? WHERE id = ?;');
-    const updatedAtResult = updatedAtQuery.run(updatedAt, user.id);
+    const updatedAtQuery = db.prepare('UPDATE users SET updated_at = ? WHERE email = ?;');
+    const updatedAtResult = updatedAtQuery.run(updatedAt, email);
 
     return {
       data: null,

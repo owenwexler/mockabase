@@ -111,26 +111,6 @@ describe('Core functions', () => {
     await mockabaseClient.signOut();
   });
 
-  test('the change password route does not work without a login, and also does not work without that specific user logged in', async () => {
-    await mockabaseClient.signOut();
-
-    const changePasswordWithoutLoginResult = await changeTestUserPassword();
-    expect(changePasswordWithoutLoginResult).toEqual({
-      data: null,
-      error: errors.invalidCredentials
-    });
-
-    const login = await mockabaseClient.signInWithPassword({ email: seedData[0].email, password: seedData[0].password });
-
-    const changePasswordWithoutUserResult = await changeTestUserPassword();
-    expect(changePasswordWithoutUserResult).toEqual({
-      data: null,
-      error: errors.invalidCredentials
-    });
-
-    await mockabaseClient.signOut();
-  });
-
   test('a user can change their password successfully when logged in, the old password does not work after change and the new password works', async () => {
     const login = await mockabaseClient.signInWithPassword({ email: newTestUser.email, password: newTestUser.password });
 

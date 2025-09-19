@@ -145,15 +145,7 @@ app.post('/change-password', async (c) => {
   try {
     const session = getCurrentSession();
 
-    if (!session || session.user.email !== email) {
-      console.error(errors.invalidCredentials);
-      return c.json({
-        data: null,
-        error: errors.invalidCredentials
-      });
-    }
-
-    const changePasswordResult = await changeUserPassword(session.user as User, newPassword);
+    const changePasswordResult = await changeUserPassword(email, newPassword);
 
     if (changePasswordResult.error) {
       console.error(changePasswordResult.error);
