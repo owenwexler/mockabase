@@ -139,7 +139,6 @@ app.post('/change-password', async (c) => {
   // use c.req.json() if the content type is 'application/json' and c.req.parseBody() otherwise
   const body = contentType === 'application/json' ? await c.req.json() : await c.req.parseBody();
 
-  const id = body['id'].toString();
   const email = body['email'].toString();
   const newPassword = body['newPassword'].toString();
 

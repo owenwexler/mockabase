@@ -1,6 +1,8 @@
+import { errors } from "../data/errors";
 import { typedFetch } from "../helper/typedFetch";
 import type { OAuthProvider } from "../typedefs/OAuthProvider";
 import type { ReturnObject } from "../typedefs/ReturnObject";
+
 
 interface CreateMockbaseClientArgs {
   mockabaseUrl: string;
@@ -11,6 +13,12 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
   return {
     url: mockabaseUrl,
     getUser: async function (): Promise<ReturnObject> {
+      try {
+
+      } catch (error) {
+        console.error(error);
+        return { data: null, error: errors.internalServerError }
+      }
       const response = await typedFetch<ReturnObject>({
         url: `${mockabaseUrl}/get-current-session`,
         method: 'GET',
@@ -46,7 +54,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
         return session;
       } catch (error) {
         console.error(error);
-        throw error;
+        return { data: null, error: errors.internalServerError };
       }
     },
     signInWithOAuth: async function (args: { provider: OAuthProvider }) {
@@ -64,7 +72,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
         return response;
       } catch (error) {
         console.error(error);
-        throw error;
+        return { data: null, error: errors.internalServerError };
       }
     },
     signOut: async function () {
@@ -96,7 +104,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
         return response;
       } catch (error) {
         console.error(error);
-        throw error;
+        return { data: null, error: errors.internalServerError };
       }
     },
     signUpWithOAuth: async function(args: { provider: OAuthProvider }) {
@@ -114,7 +122,26 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
         return response;
       } catch (error) {
         console.error(error);
-        throw error;
+        return { data: null, error: errors.internalServerError };
+      }
+    },
+    updateUser: async function (args: { email: string, newPassword: string }) {
+      const { email, newPassword } = args;
+
+      try {
+        const response = await typedFetch<ReturnObject>({
+          url: `${mockabaseUrl}/change-password`,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(args)
+        });
+
+        return response;
+      } catch (error) {
+        console.error(error);
+        return { data: null, error: errors.internalServerError };
       }
     }
   }

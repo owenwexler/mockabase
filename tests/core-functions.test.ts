@@ -38,6 +38,19 @@ const wrongPasswordTestCases = [
   }
 ];
 
+const changeTestUserPassword = async () => {
+  try {
+    const changePasswordWithoutLoginResult = await mockabaseClient.updateUser({ email: newTestUser.email, newPassword: 'testtesttest' });
+    return changePasswordWithoutLoginResult;
+  } catch (error) {
+    console.error(error);
+	  return {
+			data: null,
+			error: errors.internalServerError
+		}
+  }
+}
+
 describe('Core functions', () => {
   // clear the test users out of the DB if they exist and re-seed them before running the test suite
   beforeAll(async () => {
@@ -79,7 +92,7 @@ describe('Core functions', () => {
     await mockabaseClient.signOut();
   });
 
-  test('a new test user can be signed up successfully, a logged-in session returns the new user, the test user can be deleted successfully, and attempting to login with the deletd test user returns the proper error', async () => {
+  test('a new test user can be signed up successfully and a logged-in session returns the new user', async () => {
     const signupResult = await mockabaseClient.signUpWithPassword(newTestUser);
     expect(signupResult).toEqual({
       data: { user: { id: newTestUser.id, email: newTestUser.email } },
@@ -96,7 +109,51 @@ describe('Core functions', () => {
     });
 
     await mockabaseClient.signOut();
+  });
 
+  test('the change password route does not work without a login, and also does not work without that specific user logged in', async () => {
+    await mockabaseClient.signOut();
+
+    const changePasswordWithoutLoginResult = await changeTestUserPassword();
+    expect(changePasswordWithoutLoginResult).toEqual({
+      data: null,
+      error: errors.invalidCredentials
+    });
+
+    const login = await mockabaseClient.signInWithPassword({ email: seedData[0].email, password: seedData[0].password });
+
+    const changePasswordWithoutUserResult = await changeTestUserPassword();
+    expect(changePasswordWithoutUserResult).toEqual({
+      data: null,
+      error: errors.invalidCredentials
+    });
+
+    await mockabaseClient.signOut();
+  });
+
+  test('a user can change their password successfully when logged in, the old password does not work after change and the new password works', async () => {
+    const login = await mockabaseClient.signInWithPassword({ email: newTestUser.email, password: newTestUser.password });
+
+    const changePasswordResult = await changeTestUserPassword();
+
+    await mockabaseClient.signOut();
+
+    const loginWithOldPassword = await mockabaseClient.signInWithPassword({ email: newTestUser.email, password: newTestUser.password });
+    expect(loginWithOldPassword).toEqual({
+      data: null,
+      error: errors.invalidCredentials
+    });
+
+    const loginWithNewPassword = await mockabaseClient.signInWithPassword({ email: newTestUser.email, password: 'testtesttest' });
+    expect(loginWithNewPassword).toEqual({
+      data: { user: { id: newTestUser.id, email: newTestUser.email } },
+      error: null
+    });
+
+    await mockabaseClient.signOut();
+  });
+
+  test('the test user can be deleted successfully, and attempting to log in with the deleted test user returns the proper error', async () => {
     const deletionResult = await testDeleteUser(newTestUser.id);
     expect(deletionResult).toEqual(emptySessionObject);
 

@@ -348,7 +348,7 @@ const login = async (args: { email: string, password: string }) => {
 * **Database**: [PostgreSQL](https://www.postgresql.org/)
 * **Backend Framework**: [Hono](https://hono.dev/)
 * **Hash/Encryption Library**: [BCrypt](https://www.npmjs.com/package/bcrypt)
-* **Postgres Client**: [Postgres.js](https://github.com/porsager/postgres)
+* **SQLite Client**: [Better-SQLite3](https://github.com/WiseLibs/better-sqlite3)
 * **Testing**: [Vitest](https://vitest.dev/)
 
 Node is used instead of Deno, Bun, or other runtimes for maximum compatibility with everyone's use.
