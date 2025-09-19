@@ -13,10 +13,10 @@ I simply wrote this to solve a problem I had with testing Supabase auth in my ap
 This is not a commercial project and I'm not making money from it.  The name Supabase belongs to its creators.
 
 # How does Mockabase work?
-Mockabase uses an embedded SQLite database with a users table that loosely mocks the ```auth.users``` table in Supabase.  There are various routes for all expected user functions (including a mock "OAuth" login and signup) detailed in the routes section below.  "Sessions" are currently handled with a JSON file at the root of the project called ```session.json```, which is either null if logged out or has the id and e-mail of the current user if logged in.  I consider this an acceptable minimal way to mock sessions for testing and development purposes.
+Mockabase uses an embedded SQLite database (in a file called mockabase.sqlite) with a users table that loosely mocks the ```auth.users``` table in Supabase.  There are various routes for all expected user functions (including a mock "OAuth" login and signup) detailed in the routes section below.  "Sessions" are currently handled with a JSON file at the root of the project called ```session.json```, which is either null if logged out or has the id and e-mail of the current user if logged in.  I consider this an acceptable minimal way to mock sessions for testing and development purposes.
 
 ## Why SQLite and not PostgreSQL?
-Although Supabase uses Postgres under the hood, as of September 2025, Mockabase uses an embedded SQLite database for simplicity and portability.  Any relevant Postgres-exclusive functions such as timestamps and UUIDs are handled within Mockabase's code rather than in the database.
+Although Supabase uses Postgres under the hood, as of September 2025, Mockabase uses an embedded SQLite database for simplicity and portability.  When Mockabase was using PostgreSQL, the user was required to have PostgreSQL installed and set up locally, and then set up a local database as part of the setup process for Mockabase.  With SQLite, the database is simply a file that is created as soon as the user starts Mockabase, with most of the same functionality and no need for a local install.  Any relevant Postgres-exclusive functions such as timestamps and UUIDs are handled within Mockabase's code rather than in the database.  We recommend using [TablePlus](https://tableplus.com/) to look at the SQLite database directly if needed.
 
 # Major breaking changes in version 2.0
 ```signup```, ```login```, and ```get-current-session``` routes now return objects in the following format:
@@ -96,6 +96,9 @@ mockabase
 ├── .gitignore - .gitignore file
 ├── CODE_OF_CONDUCT.md - contributor code of conduct
 ├── CONTRIBUTING.md - contributing guidelines
+├── mockabase.sqlite - the embedded SQLite database file
+├── mockabase.sqlite-shm - shared memory file for mockabase.sqlite
+├── mockabase.sqlite-wal - write-ahead-log file for mockabase.sqlite
 ├── package.json - NPM package.json file
 ├── package-lock.json - NPM package-lock.json file
 ├── README.md - this file
@@ -206,8 +209,27 @@ Returns:
   all sucessfully added objects above
 ]
 ```
-
 Unlike the other routes, the Content-Type for this route must be ```application/json```.
+
+### **POST** /change-password
+Takes in a JSON body with an email address, and the new password, and changes the password for the user associated with that email addressto the new password in the database.
+
+Accepted body format:
+```
+  {
+    email: string (e-mail address),
+    newPassword: string,
+  },
+```
+
+Returns:
+```
+  {
+    data: null,
+    error: error | null
+  }
+```
+
 
 ### **POST** /mock-oauth/:provider
 Mocks an OAuth login with an e-mail address and password pre-determined with the MOCK_OAUTH_EMAIL and MOCK_OAUTH_PASSWORD environment variables.
@@ -305,6 +327,7 @@ Returns the following object with several functions that mirror the above API ro
   signOut(): Function - Corresponding route: /logout,
   signUpWithPassword(args: { id: string, email: string, password: string }): Function - Corresponding route: /signup,
   signUpWithOAuth(args: { provider: OAuthProvider }): Function - Corresponding route: /mock-oauth,
+  updateUser(args: { email: string, newPassword: string }): Function - Corresponding route: /change-password
 }
 ```
 
@@ -345,7 +368,7 @@ const login = async (args: { email: string, password: string }) => {
 # Stack
 * **Language**: [TypeScript](https://www.typescriptlang.org/)
 * **Runtime**: [Node](https://nodejs.org/)
-* **Database**: [PostgreSQL](https://www.postgresql.org/)
+* **Database**: [SQLite](https://sqlite.org/)
 * **Backend Framework**: [Hono](https://hono.dev/)
 * **Hash/Encryption Library**: [BCrypt](https://www.npmjs.com/package/bcrypt)
 * **SQLite Client**: [Better-SQLite3](https://github.com/WiseLibs/better-sqlite3)
