@@ -26,6 +26,9 @@ This more closely mirrors the Supabase API.
 
 Errors are now returned as Supabase-like error objects instead of strings, to more closely mirror the Supabase API.  For a complete reference of all error objects returned by Mockabase, see the ```src/data/errors.ts``` file.
 
+# Major breaking changes in version 3.0
+All functions in the Mockabase client are now under a singular "auth" object, in order to mirror the Supabase API even more accurately.
+
 # Installation
 
 You must have the following installed locally to use Mockabase:
@@ -320,14 +323,16 @@ Returns the following object with several functions that mirror the above API ro
 ```
 {
   url: string;
-  getUser(): Function - Corresponding route: /get-user-session,
-  getSession(): Function - Corresponding route: /get-user-session,
-  signInWithPassword(args: { email: string, password: string }): Function - Corresponding route: /login,
-  signInWithOAuth(args: { provider: OAuthProvider }): Function - Corresponding route: /mock-oauth,
-  signOut(): Function - Corresponding route: /logout,
-  signUpWithPassword(args: { id: string, email: string, password: string }): Function - Corresponding route: /signup,
-  signUpWithOAuth(args: { provider: OAuthProvider }): Function - Corresponding route: /mock-oauth,
-  updateUser(args: { email: string, newPassword: string }): Function - Corresponding route: /change-password
+  auth: { // as of version 3.0, all auth functions are under this auth object
+    getUser(): Function - Corresponding route: /get-user-session,
+    getSession(): Function - Corresponding route: /get-user-session,
+    signInWithPassword(args: { email: string, password: string }): Function - Corresponding route: /login,
+    signInWithOAuth(args: { provider: OAuthProvider }): Function - Corresponding route: /mock-oauth,
+    signOut(): Function - Corresponding route: /logout,
+    signUpWithPassword(args: { id: string, email: string, password: string }): Function - Corresponding route: /signup,
+    signUpWithOAuth(args: { provider: OAuthProvider }): Function - Corresponding route: /mock-oauth,
+    updateUser(args: { email: string, newPassword: string }): Function - Corresponding route: /change-password
+  }
 }
 ```
 
@@ -339,7 +344,7 @@ const login = async (args: { email: string, password: string }) => {
   const mockabaseClient = createMockabaseClient({ mockabaseUrl: process.env.MOCKABASE_URL });
 
   try {
-    const response = await mockabaseClient.signInWithPassword(args);
+    const response = await mockabaseClient.auth.signInWithPassword(args);
 
     const { data, error } = response;
 
