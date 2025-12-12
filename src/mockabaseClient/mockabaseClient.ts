@@ -14,6 +14,15 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
     auth: {
       getUser: async function (): Promise<ReturnObject> {
         try {
+          const response = await typedFetch<ReturnObject>({
+            url: `${mockabaseUrl}/get-current-session`,
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+
+          return response;
 
         } catch (error) {
           console.error(error);
