@@ -17,7 +17,7 @@ const userAlreadyExistsErrorObject: ReturnObject = { data: null, error: errors.u
 
 const mockabaseClient = createMockabaseClient({ mockabaseUrl: hostUrl });
 
-const loginTestCases = seedData.map(obj => {
+const passwordLoginTestCases = seedData.slice(0, 2).map(obj => {
   return {
     input: obj,
     expected: {
@@ -29,7 +29,7 @@ const loginTestCases = seedData.map(obj => {
 
 const wrongPasswordTestCases = [
   {
-    input: { email: 'owenwexler@mockabase.com', password: 'owexler2' },
+    input: { email: 'owenwexler@mockabase.com', password: 'owexler!2' },
     expected: wrongPasswordErrorObject
   },
   {
@@ -40,7 +40,7 @@ const wrongPasswordTestCases = [
 
 const changeTestUserPassword = async () => {
   try {
-    const changePasswordWithoutLoginResult = await mockabaseClient.auth.updateUser({ email: newTestUser.email, newPassword: 'testtesttest' });
+    const changePasswordWithoutLoginResult = await mockabaseClient.auth.updateUser({ email: newTestUser.email, newPassword: 'testtesttest!2' });
     return changePasswordWithoutLoginResult;
   } catch (error) {
     console.error(error);
@@ -57,8 +57,8 @@ describe('Core functions', () => {
     await seedDB();
   });
 
-  test.each(loginTestCases)(`logging in as each test user with the correct password returns the expected result`, async ({ input, expected }) => {
-    const result = await mockabaseClient.auth.signInWithPassword({ email: input.email, password: input.password });
+  test.each(passwordLoginTestCases)(`logging in as each test user with the correct password returns the expected result`, async ({ input, expected }) => {
+    const result = await mockabaseClient.auth.signInWithPassword({ email: input.email!, password: input.password! });
     expect(result).toEqual(expected);
     await mockabaseClient.auth.signOut();
   })
@@ -82,7 +82,7 @@ describe('Core functions', () => {
   });
 
   test('attempting to sign up with the email of an already existing user returns the proper error', async () => {
-    const response = await mockabaseClient.auth.signUpWithPassword({ id: 'd6829dc1-4bd5-425e-9b7f-14f3a721aaa8', email: seedData[0].email, password: 'doesntexist' });
+    const response = await mockabaseClient.auth.signUpWithPassword({ id: 'd6829dc1-4bd5-425e-9b7f-14f3a721aaa8', email: seedData[0].email!, password: 'doesntexist' });
     expect(response).toEqual(userAlreadyExistsErrorObject);
   });
 

@@ -57,8 +57,8 @@ app.post('/seed', async (c) => {
   }
 });
 
-app.post('/signup', async (c) => {
-  console.log('POST /signup');
+app.post('/email-password-signup', async (c) => {
+  console.log('POST /email-password-signup');
   const contentType = c.req.header('Content-Type');
 
   // use c.req.json() if the content type is 'application/json' and c.req.parseBody() otherwise
@@ -91,8 +91,8 @@ app.post('/signup', async (c) => {
   }
 });
 
-app.post('/login', async (c) => {
-  console.log('POST /login');
+app.post('/email-password-login', async (c) => {
+  console.log('POST /email-password-login');
   const contentType = c.req.header('Content-Type');
 
   // use c.req.json() if the content type is 'application/json' and c.req.parseBody() otherwise

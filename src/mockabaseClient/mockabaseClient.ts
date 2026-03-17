@@ -23,20 +23,10 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
           });
 
           return response;
-
         } catch (error) {
           console.error(error);
           return { data: null, error: errors.internalServerError }
         }
-        const response = await typedFetch<ReturnObject>({
-          url: `${mockabaseUrl}/get-current-session`,
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        return response;
       },
       getSession: async function (): Promise<ReturnObject> {
         const response = await typedFetch<ReturnObject>({
@@ -52,7 +42,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
       signInWithPassword: async function (args: { email: string, password: string }) {
         try {
           const session = await typedFetch<ReturnObject>({
-            url: `${mockabaseUrl}/login`,
+            url: `${mockabaseUrl}/email-password-login`,
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -98,7 +88,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
         try {
           const response = await typedFetch<ReturnObject>({
-            url: `${mockabaseUrl}/signup`,
+            url: `${mockabaseUrl}/email-password-signup`,
             body: JSON.stringify({
               id,
               email,

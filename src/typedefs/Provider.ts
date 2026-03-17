@@ -1,0 +1,1 @@
+export type Provider = 'email-password' | 'email-passwordless' | 'phone' | 'oauth';

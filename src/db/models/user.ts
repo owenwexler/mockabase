@@ -14,6 +14,7 @@ import db from '../db';
 interface GenericUserModelArgs {
   email: string;
   password: string;
+  phoneNumber: string;
 }
 
 interface SignupArgs extends GenericUserModelArgs {
@@ -40,8 +41,8 @@ const signup = async (args: SignupArgs): Promise<ReturnObject> => {
     const createdAt = toPostgresTimestampUTC(new Date());
     const updatedAt = toPostgresTimestampUTC(new Date());
 
-    const query = db.prepare('INSERT INTO users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) RETURNING id, email;');
-    const result = query.run(id, email, encryptedPassword, emailConfirmedAt, createdAt, updatedAt);
+    const query = db.prepare('INSERT INTO users (id, email, encrypted_password, phone_number, oauth_provider, provider_type, email_confirmed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) RETURNING id, email, phone_number AS "phoneNumber", oauth_provider AS "oauthProvider";');
+    const result = query.run(id, email, encryptedPassword, phoneNumber, oauthProvider, providerType, emailConfirmedAt, createdAt, updatedAt);
 
     return {
       data: result ? { user: { id, email } } : { user: { id: '', email: '' } },

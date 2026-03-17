@@ -1,6 +1,7 @@
 interface Session {
   id: string;
-  email: string;
+  email?: string;
+  phoneNumber: string;
 }
 
 export type {

@@ -9,6 +9,7 @@ interface ErrorsObject {
   missingPassword: ErrorType;
   weakPassword: ErrorType;
   sessionNotFound: ErrorType;
+  accessDenied: ErrorType;
   [key: string]: ErrorType
 }
 
@@ -66,5 +67,11 @@ export const errors: ErrorsObject = {
     message: 'Missing Inputs',
     details: 'Required inputs are missing',
     hint: 'Check that all require inputs are passed in to the function'
+  },
+  accessDenied: {
+    code: 'access_denied',
+    message: '401 Access Denied',
+    details: 'Access denied',
+    hint: 'Make sure you are using the proper API key or authentication if you are authorized, or stop trying to hack our API if you are not'
   }
 };
