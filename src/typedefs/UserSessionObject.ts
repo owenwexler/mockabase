@@ -1,7 +1,7 @@
 import type { Session } from "./Session";
 
 interface UserSessionObject {
-  user: Session;
+  session: Session;
 }
 
 export type {

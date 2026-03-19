@@ -13,5 +13,11 @@ export const mockabaseErrors: ErrorsObject = {
     message: 'Missing OTP',
     details: 'There is no OTP assigned to the current user and one is needed',
     hint: 'Likely you tried to run a phone number or other passwordless sign-in without assigning and/or verifying an OTP first'
+  },
+  invalidPhoneNumber: {
+    code: 'invalid_phone_number',
+    message: 'Invalid phone number',
+    details: 'The phone number entered by the user is in an invalid format',
+    hint: 'Check the format of the phone number entered'
   }
 };

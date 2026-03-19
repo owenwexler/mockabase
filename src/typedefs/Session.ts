@@ -1,12 +1,3 @@
-import type { OAuthProvider } from "./OAuthProvider";
+import type { User } from "./User";
 
-interface Session {
-  id: string;
-  email?: string;
-  phoneNumber?: string;
-  oauthProvider?: OAuthProvider;
-}
-
-export type {
-  Session
-}
+export type Session = Pick<User, 'id' | 'email' | 'phoneNumber' | 'providerType' | 'oauthProvider'>;

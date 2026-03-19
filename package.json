@@ -14,6 +14,7 @@
     "dataerror": "^1.0.0",
     "dotenv": "^16.5.0",
     "hono": "^4.9.7",
+    "libphonenumber-js": "^1.12.40",
     "uuid": "^11.1.0",
     "vitest": "^3.1.3"
   },
