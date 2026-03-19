@@ -1,27 +1,30 @@
 import { hash } from '../../helper/hash';
 import { comparePasswords } from '../../helper/comparePasswords';
-import sql from '../db';
 import { blankUser } from '../../data/blankObjects';
 import type { User } from '../../typedefs/User';
 import { v4 as uuidv4 } from 'uuid';
-import { errors } from '../../data/errors';
-import type { ReturnObject } from '../../typedefs/ReturnObject';
 import type { ErrorType } from '../../typedefs/ErrorType';
-import type { Session } from '../../typedefs/Session';
 import { toPostgresTimestampUTC } from '../../helper/timestampFunctions';
 import db from '../db';
+import { failure, success, errors, type DataErrorReturnObject } from 'dataerror';
+import type { MockabaseUserReturnObject } from '../../typedefs/MockabaseUserReturnObject';
+import type { UserSessionObject } from '../../typedefs/UserSessionObject';
+import type { Provider } from '../../typedefs/Provider';
+import { generateRandomOTP } from '../../helper/generateRandomOTP';
+import type { Statement } from 'better-sqlite3';
+import type Database from 'better-sqlite3';
+import { mockabaseErrors } from '../../data/mockabaseErrors';
 
-interface GenericUserModelArgs {
+interface GenericUserPasswordEmailArgs {
   email: string;
   password: string;
-  phoneNumber: string;
 }
 
-interface SignupArgs extends GenericUserModelArgs {
+interface SignupArgs extends GenericUserPasswordEmailArgs {
   id?: string;
 }
 
-const signup = async (args: SignupArgs): Promise<ReturnObject> => {
+const emailPasswordSignup = async (args: SignupArgs): Promise<MockabaseUserReturnObject> => {
   const { email, password } = args;
 
   const id = args.id ? args.id : uuidv4();
@@ -29,10 +32,7 @@ const signup = async (args: SignupArgs): Promise<ReturnObject> => {
   const userExists = await checkUserExists(email);
 
   if (userExists) {
-    return {
-      data: null,
-      error: errors.userAlreadyExists
-    };
+    return await failure<UserSessionObject>(mockabaseErrors.userAlreadyExists, 'models/emailPasswordSignup');
   }
 
   try {
@@ -41,79 +41,53 @@ const signup = async (args: SignupArgs): Promise<ReturnObject> => {
     const createdAt = toPostgresTimestampUTC(new Date());
     const updatedAt = toPostgresTimestampUTC(new Date());
 
-    const query = db.prepare('INSERT INTO users (id, email, encrypted_password, phone_number, oauth_provider, provider_type, email_confirmed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) RETURNING id, email, phone_number AS "phoneNumber", oauth_provider AS "oauthProvider";');
-    const result = query.run(id, email, encryptedPassword, phoneNumber, oauthProvider, providerType, emailConfirmedAt, createdAt, updatedAt);
+    const query = db.prepare('INSERT INTO users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) RETURNING id, email, phone_number AS "phoneNumber", oauth_provider AS "oauthProvider";');
+    const result = query.run(id, email, encryptedPassword, emailConfirmedAt, createdAt, updatedAt);
 
-    return {
-      data: result ? { user: { id, email } } : { user: { id: '', email: '' } },
-      error: null
-    };
+    const data = result ? { user: { id, email } } : { user: { id: '', email: '' } };
+    return await success<UserSessionObject>(data);
   } catch (error) {
-    console.error(error);
-    return {
-      data: null,
-      error: errors.internalServerError
-    }
+    return await failure<UserSessionObject>(error, 'models/emailPasswordSignup');
   }
 }
 
-const login = async (args: GenericUserModelArgs): Promise<ReturnObject> => {
+const emailPasswordLogin = async (args: GenericUserPasswordEmailArgs): Promise<MockabaseUserReturnObject> => {
   const { email, password } = args;
 
   try {
     const userResponse = await getUser(email);
 
     if (userResponse.error && userResponse.error.code == 'user_not_found') {
-      return {
-        data: null,
-        error: errors.userNotFound
-      }
+      return await failure<UserSessionObject>(mockabaseErrors.userAlreadyExists, 'models/emailPasswordLogin');
     }
 
     const user = userResponse.data!;
 
-    const passwordsMatch = await comparePasswords({ inputPassword: password, hash: user.encryptedPassword });
+    const passwordsMatch = await comparePasswords({ inputPassword: password, hash: user.encryptedPassword! });
 
     if (passwordsMatch) {
-      return {
-        data: { user: { id: user.id, email: user.email } },
-        error: null
-      }
+      return await success<UserSessionObject>({ user: { id: user.id, email: user.email! } });
     } else {
-      return {
-        data: null,
-        error: errors.invalidCredentials
-      }
+      return await failure<UserSessionObject>(mockabaseErrors.invalidCredentials, 'models/emailPasswordLogin');
     }
   } catch (error) {
-    console.error(error);
-    throw error;
+    return await failure<UserSessionObject>(errors, 'models/emailPasswordLogin');
   }
 }
 
-const getUser = async (email: string): Promise<{ data: { id: string; email: string;  encryptedPassword: string } | null, error: ErrorType | null }> => {
+const getUser = async (email: string): Promise<DataErrorReturnObject<User>> => {
   try {
-    const query = db.prepare('SELECT id, email, encrypted_password AS "encryptedPassword" FROM users WHERE email = ?');
+    const query = db.prepare('SELECT id, email, phone_number AS "phoneNumber", provider_type AS "providerType", encrypted_password AS "encryptedPassword", otp FROM users WHERE email = ?');
     const result = query.get(email);
     const user: User | undefined = result as User | undefined; // Type assertion for safety
 
     if (!user || user.id === '') {
-      return {
-        data: null,
-        error: errors.userNotFound
-      }
+      return await failure<User>(errors, 'models/emailPasswordLogin');
     }
 
-    return {
-      data: user ? user : blankUser,
-      error: null
-    }
+    return await success<User>(user);
   } catch (error) {
-    console.error(error);
-    return {
-      data: null,
-      error: errors.internalServerError
-    }
+    return await failure<User>(errors, 'models/emailPasswordLogin');
   }
 }
 
@@ -131,33 +105,24 @@ const checkUserExists = async (email: string): Promise<boolean> => {
   }
 }
 
-const deleteUser = async (id: string): Promise<ReturnObject> => {
+const deleteUser = async (id: string): Promise<DataErrorReturnObject<null>> => {
   try {
     const query = db.prepare('DELETE FROM users WHERE id = ?;');
 
     const result = query.run(id);
 
-    return {
-      data: null,
-      error: null
-    }
+    return await success<null>(null);
   } catch (error) {
-    console.error(error);
-
-    return {
-      data: null,
-      error: errors.internalServerError
-    }
+    return await failure<null>(error, 'models/deleteUser');
   }
 }
 
-const deleteMultipleUsers = async (ids: string[]) => {
+type DeletedCount = { deleted: number };
+
+const deleteMultipleUsers = async (ids: string[]): Promise<DataErrorReturnObject<DeletedCount>> => {
 // Preserve original input checks/early returns
   if (!Array.isArray(ids) || ids.length === 0) {
-    return {
-      data: { deleted: 0 },
-      error: errors.missingInputs
-    };
+    return await failure<DeletedCount>(mockabaseErrors.missingInputs, 'models/deleteMultipleUsers');
   }
 
   // Conservative batch size to stay under SQLite's variable limit.
@@ -187,38 +152,25 @@ const deleteMultipleUsers = async (ids: string[]) => {
 
     runTxn(); // execute the transaction
 
-    return { data: { deleted: totalDeleted }, error: null };
+    return await success<DeletedCount>({ deleted: totalDeleted });
   } catch (error) {
-    console.error(error);
-
-    return {
-      data: null,
-      error: errors.internalServerError
-    }
+    return await failure<DeletedCount>(error, 'models/deleteMultipleUsers');
   }
 }
 
-const deleteAllUsers = async () => {
+const deleteAllUsers = async (): Promise<DataErrorReturnObject<null>> => {
   try {
     const query = db.prepare('DELETE FROM user;');
 
     const result = query.run();
 
-    return {
-      data: null,
-      error: null
-    }
+    return await success<null>(null);
   } catch (error) {
-    console.error(error);
-
-    return {
-      data: null,
-      error: errors.internalServerError
-    }
+    return await failure<null>(error, 'models/deleteAllUsers');
   }
 }
 
-const changeUserPassword = async (email: string, newPassword: string) => {
+const changeUserPassword = async (email: string, newPassword: string): Promise<DataErrorReturnObject<null>> => {
   try {
     const encryptedNewPassword = await hash(newPassword);
     const updatedAt = toPostgresTimestampUTC(new Date());
@@ -228,27 +180,82 @@ const changeUserPassword = async (email: string, newPassword: string) => {
     const updatedAtQuery = db.prepare('UPDATE users SET updated_at = ? WHERE email = ?;');
     const updatedAtResult = updatedAtQuery.run(updatedAt, email);
 
-    return {
-      data: null,
-      error: null
+    return await success<null>(null);
+  } catch (error) {
+    return await failure<null>(error, 'models/changeUserPassword');
+  }
+}
+
+interface AssignOTPArgs {
+  providerType: Provider;
+  email?: string;
+  phoneNumber?: string;
+}
+
+const assignOTP = async (args: AssignOTPArgs): Promise<DataErrorReturnObject<'ok'>> => {
+  const { providerType, email, phoneNumber } = args;
+
+  const otp = generateRandomOTP(6);
+
+  try {
+    if (providerType === 'phone') {
+      const query = db.prepare('UPDATE users SET otp = ? WHERE phone_number = ?;');
+      const response = query.run(otp, phoneNumber);
+
+      return await success<'ok'>('ok');
+    } else {
+      const query = db.prepare('UPDATE users SET otp = ? WHERE email = ?;');
+      const response = query.run(otp, email);
+
+      return await success<'ok'>('ok');
     }
   } catch (error) {
-    console.error(error);
+    return await failure<'ok'>(error, 'models/assignOTP');
+  }
+}
 
-    return {
-      data: null,
-      error: errors.internalServerError
+interface VerifyOTPArgs extends AssignOTPArgs {
+  otp: string;
+}
+
+const verifyOTP = async (args: VerifyOTPArgs): Promise<DataErrorReturnObject<'ok'>> => {
+  const { providerType, email, phoneNumber, otp } = args;
+
+  let query: Statement<unknown[], unknown>;
+  let response: Database.RunResult;
+
+  try {
+    if (providerType === 'phone') {
+      // TODO: look into using a base query for the SELECTs so they aren't repeated 3 times
+      query = db.prepare('SELECT id, email, phone_number AS "phoneNumber", provider_type AS "providerType", encrypted_password AS "encryptedPassword", otp FROM users WHERE phone_number = ?');
+      response = query.run(phoneNumber);
+    } else {
+      const query = db.prepare('SELECT id, email, phone_number AS "phoneNumber", provider_type AS "providerType", encrypted_password AS "encryptedPassword", otp FROM users WHERE email = ?');
+      response = query.run(email);
     }
+
+    const user: User | undefined = response as unknown as User | undefined; // Type assertion for safety
+
+    if (user!.otp === otp) {
+      return await success<'ok'>('ok');
+    } else {
+      return await failure<'ok'>(mockabaseErrors.invalidOTP, 'models/verifyOTP');
+    }
+
+  } catch (error) {
+    return await failure<'ok'>(error, 'models/verifyOTP');
   }
 }
 
 export {
-  signup,
-  login,
+  emailPasswordSignup,
+  emailPasswordLogin,
   getUser,
   checkUserExists,
   deleteUser,
   deleteMultipleUsers,
   deleteAllUsers,
-  changeUserPassword
+  changeUserPassword,
+  assignOTP,
+  verifyOTP
 }

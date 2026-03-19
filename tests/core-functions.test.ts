@@ -4,16 +4,16 @@ import { seedData } from '../src/data/seedData';
 import { testEnv } from './testEnv/testEnv';
 import { newTestUser } from '../src/data/newTestUser';
 
-import type { ReturnObject } from '../src/typedefs/ReturnObject';
+import type { MockabaseUserReturnObject } from '../src/typedefs/MockabaseUserReturnObject';
 import { createMockabaseClient } from '../src/mockabaseClient/mockabaseClient';
-import { errors } from '../src/data/errors';
+import { mockabaseErrors } from '../src/data/mockabaseErrors';
 
 const { mockOAuthEmail, hostUrl } = testEnv;
 
-const emptySessionObject: ReturnObject = { data: null, error: null };
-const wrongPasswordErrorObject: ReturnObject = { data: null, error: errors.invalidCredentials };
-const nonexistentUserErrorObject: ReturnObject = { data: null, error: errors.userNotFound };
-const userAlreadyExistsErrorObject: ReturnObject = { data: null, error: errors.userAlreadyExists };
+const emptySessionObject: MockabaseUserReturnObject = { data: null, error: null };
+const wrongPasswordErrorObject: MockabaseUserReturnObject = { data: null, error: mockabaseErrors.invalidCredentials };
+const nonexistentUserErrorObject: MockabaseUserReturnObject = { data: null, error: mockabaseErrors.userNotFound };
+const userAlreadyExistsErrorObject: MockabaseUserReturnObject = { data: null, error: mockabaseErrors.userAlreadyExists };
 
 const mockabaseClient = createMockabaseClient({ mockabaseUrl: hostUrl });
 
@@ -46,7 +46,7 @@ const changeTestUserPassword = async () => {
     console.error(error);
 	  return {
 			data: null,
-			error: errors.internalServerError
+			error: mockabaseErrors.internalServerError
 		}
   }
 }
@@ -121,7 +121,7 @@ describe('Core functions', () => {
     const loginWithOldPassword = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: newTestUser.password });
     expect(loginWithOldPassword).toEqual({
       data: null,
-      error: errors.invalidCredentials
+      error: mockabaseErrors.invalidCredentials
     });
 
     const loginWithNewPassword = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: 'testtesttest' });

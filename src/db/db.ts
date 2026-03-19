@@ -1,19 +1,14 @@
 import Database from 'better-sqlite3';
+import { readFileSync } from 'fs';
 
 const db = new Database('mockabase.sqlite'); // Connect to or create a database file
 
-// id is a UUID and email_confirmed_at, created_at, and updated_at are timestamps, but these data types are not supported by SQLite
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
-    email TEXT UNIQUE NOT NULL,
-    encrypted_password TEXT NOT NULL,
-    email_confirmed_at TEXT,
-    created_at TEXT,
-    updated_at TEXT
-  );
-`);
 // Enable WAL journal mode for better performance (optional but recommended)
 db.pragma('journal_mode = WAL');
+
+// Run schema
+const schemaPath = "./src/sql/schema.sql";
+const schemaSql = readFileSync(schemaPath, "utf-8");
+db.exec(schemaSql);
 
 export default db;

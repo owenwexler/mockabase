@@ -1,6 +1,6 @@
 import { seedData } from "../../src/data/seedData";
 import { typedFetch } from "../../src/helper/typedFetch";
-import type { ReturnObject } from "../../src/typedefs/ReturnObject";
+import type { ReturnObject } from "../../src/typedefs/MockabaseUserReturnObject";
 
 import { testEnv } from "../testEnv/testEnv";
 

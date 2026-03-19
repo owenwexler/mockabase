@@ -1,7 +1,8 @@
-import { errors } from "../data/errors";
 import { typedFetch } from "../helper/typedFetch";
 import type { OAuthProvider } from "../typedefs/OAuthProvider";
-import type { ReturnObject } from "../typedefs/ReturnObject";
+import type { MockabaseUserReturnObject } from "../typedefs/MockabaseUserReturnObject";
+import { failure } from "dataerror";
+import type { AssignOTPArgs } from "../typedefs/AssignOTPArgs";
 
 interface CreateMockbaseClientArgs {
   mockabaseUrl: string;
@@ -12,9 +13,9 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
   return {
     url: mockabaseUrl,
     auth: {
-      getUser: async function (): Promise<ReturnObject> {
+      getUser: async function (): Promise<MockabaseUserReturnObject> {
         try {
-          const response = await typedFetch<ReturnObject>({
+          const response = await typedFetch<MockabaseUserReturnObject>({
             url: `${mockabaseUrl}/get-current-session`,
             method: 'GET',
             headers: {
@@ -24,12 +25,11 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
           return response;
         } catch (error) {
-          console.error(error);
-          return { data: null, error: errors.internalServerError }
+          return await failure<null>(error, 'mockabaseClient/getUser');
         }
       },
-      getSession: async function (): Promise<ReturnObject> {
-        const response = await typedFetch<ReturnObject>({
+      getSession: async function (): Promise<MockabaseUserReturnObject> {
+        const response = await typedFetch<MockabaseUserReturnObject>({
           url: `${mockabaseUrl}/get-current-session`,
           method: 'GET',
           headers: {
@@ -41,7 +41,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
       },
       signInWithPassword: async function (args: { email: string, password: string }) {
         try {
-          const session = await typedFetch<ReturnObject>({
+          const session = await typedFetch<MockabaseUserReturnObject>({
             url: `${mockabaseUrl}/email-password-login`,
             method: 'POST',
             headers: {
@@ -52,15 +52,14 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
           return session;
         } catch (error) {
-          console.error(error);
-          return { data: null, error: errors.internalServerError };
+          return await failure<null>(error, 'mockabaseClient/signInWithPassword');
         }
       },
       signInWithOAuth: async function (args: { provider: OAuthProvider }) {
         const { provider } = args;
 
         try {
-          const response = await typedFetch<ReturnObject>({
+          const response = await typedFetch<MockabaseUserReturnObject>({
             url: `${mockabaseUrl}/mock-oauth/${provider}`,
             method: 'POST',
             headers: {
@@ -70,12 +69,11 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
           return response;
         } catch (error) {
-          console.error(error);
-          return { data: null, error: errors.internalServerError };
+          return await failure<null>(error, 'mockabaseClient/signInWithOAuth');
         }
       },
       signOut: async function () {
-        const response = await typedFetch<ReturnObject>({
+        const response = await typedFetch<MockabaseUserReturnObject>({
           url: `${mockabaseUrl}/logout`,
           method: 'POST',
           headers: {
@@ -87,7 +85,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
         const { id, email, password } = args;
 
         try {
-          const response = await typedFetch<ReturnObject>({
+          const response = await typedFetch<MockabaseUserReturnObject>({
             url: `${mockabaseUrl}/email-password-signup`,
             body: JSON.stringify({
               id,
@@ -102,15 +100,14 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
           return response;
         } catch (error) {
-          console.error(error);
-          return { data: null, error: errors.internalServerError };
+          return await failure<null>(error, 'mockabaseClient/signUpWithPassword');
         }
       },
       signUpWithOAuth: async function(args: { provider: OAuthProvider }) {
         const { provider } = args;
 
         try {
-          const response = await typedFetch<ReturnObject>({
+          const response = await typedFetch<MockabaseUserReturnObject>({
             url: `${mockabaseUrl}/mock-oauth/${provider}`,
             method: 'POST',
             headers: {
@@ -120,29 +117,30 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
           return response;
         } catch (error) {
-          console.error(error);
-          return { data: null, error: errors.internalServerError };
+          return await failure<null>(error, 'mockabaseClient/signUpWithOAuth');
         }
       },
       updateUser: async function (args: { email: string, newPassword: string }) {
-        const { email, newPassword } = args;
-
         try {
-          const response = await typedFetch<ReturnObject>({
-            url: `${mockabaseUrl}/change-password`,
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(args)
-          });
+        const response = await typedFetch<MockabaseUserReturnObject>({
+          url: `${mockabaseUrl}/change-password`,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(args)
+        });
 
-          return response;
-        } catch (error) {
-          console.error(error);
-          return { data: null, error: errors.internalServerError };
-        }
+        return response;
+      } catch (error) {
+        return await failure<null>(error, 'mockabaseClient/updateUser');
       }
+    },
+    assignOTP: async function (args: AssignOTPArgs) {
+      // TODO: write this
+    },
+    verifyOTP: async function (args: VerifyOTPArgs) {
+      // TODO: write this
     }
   }
 }

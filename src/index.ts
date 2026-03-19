@@ -3,11 +3,13 @@ import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { v4 as uuidv4 } from 'uuid';
 
-import { changeUserPassword, checkUserExists, deleteAllUsers, deleteMultipleUsers, deleteUser, login, signup } from './db/models/user';
+import { changeUserPassword, checkUserExists, deleteAllUsers, deleteMultipleUsers, deleteUser, emailPasswordLogin, emailPasswordSignup } from './db/models/user';
 import { createSession, getCurrentSession, removeSession } from './session/sessionFunctions';
 import { getTypedEmailPasswordFromBody } from './helper/getTypedEmailPasswordFromBody';
-import { errors } from './data/errors';
-import type { User } from './typedefs/User';
+import { success, failure } from 'dataerror';
+import { mockabaseErrors } from './data/mockabaseErrors';
+import { MockabaseUserReturnObject } from './typedefs/MockabaseUserReturnObject';
+import type { UserSessionObject } from './typedefs/UserSessionObject';
 
 const { PORT, MOCK_OAUTH_EMAIL, MOCK_OAUTH_PASSWORD } = process.env;
 
@@ -69,12 +71,12 @@ app.post('/email-password-signup', async (c) => {
   const id = body['id'] ? body['id'].toString() : uuidv4();
 
   try {
-    const result = await signup({ id, email, password });
+    const result = await emailPasswordSignup({ id, email, password });
 
-    if (result.error && result.error.code === errors.userAlreadyExists.code) {
+    if (result.error && result.error.code === mockabaseErrors.userAlreadyExists.code) {
       return c.json({
         data: null,
-        error: errors.userAlreadyExists
+        error: mockabaseErrors.userAlreadyExists
       });
     }
 
@@ -86,7 +88,7 @@ app.post('/email-password-signup', async (c) => {
     console.error(error);
     return c.json({
       data: null,
-      error: errors.userAlreadyExists
+      error: mockabaseErrors.userAlreadyExists
     });
   }
 });
@@ -101,33 +103,32 @@ app.post('/email-password-login', async (c) => {
   const { email, password } = getTypedEmailPasswordFromBody(body);
 
   try {
-    const result = await login({ email, password });
+    const result = await emailPasswordLogin({ email, password });
 
-    if (result.error && result.error.code === errors.invalidCredentials.code) {
+    if (result.error && result.error.code === mockabaseErrors.invalidCredentials.code) {
       return c.json({
         data: null,
-        error: errors.invalidCredentials
+        error: mockabaseErrors.invalidCredentials
       });
     }
 
-    if (result.error && result.error.code === errors.userNotFound.code) {
+    if (result.error && result.error.code === mockabaseErrors.userNotFound.code) {
       return c.json({
         data: null,
-        error: errors.userNotFound
+        error: mockabaseErrors.userNotFound
       });
     }
 
     const session = createSession(result.data!.user);
 
-    return c.json({
-      data: { user: session },
-      error: null
-    });
+    const returnObject = await success<UserSessionObject>({ user: session });
+
+    return c.json(returnObject);
   } catch (error) {
     console.error(error);
     return c.json({
       data: null,
-      error: errors.internalServerError
+      error: mockabaseErrors.internalServerError
     });
   }
 });
@@ -151,7 +152,7 @@ app.post('/change-password', async (c) => {
       console.error(changePasswordResult.error);
       return c.json({
         data: null,
-        error: errors.internalServerError
+        error: mockabaseErrors.internalServerError
       });
     }
 
@@ -163,7 +164,7 @@ app.post('/change-password', async (c) => {
   	console.error(error);
     return c.json({
       data: null,
-      error: errors.internalServerError
+      error: mockabaseErrors.internalServerError
     });
   }
 });
@@ -182,16 +183,16 @@ app.post('/mock-oauth/:provider', async (c) => {
     })
   }
 
-  const result = await login({ email: MOCK_OAUTH_EMAIL, password: MOCK_OAUTH_PASSWORD });
+  const result = await login({ email: MOCK_OAUTH_EMAIL!, password: MOCK_OAUTH_PASSWORD! });
 
-  if (result.error && result.error.code === errors.invalidCredentials.code) {
+  if (result.error && result.error.code === mockabaseErrors.invalidCredentials.code) {
     return c.json({
       data: null,
-      error: errors.invalidCredentials
+      error: mockabaseErrors.invalidCredentials
     });
   }
 
-  if (result.error && result.error.code === errors.userNotFound.code) {
+  if (result.error && result.error.code === mockabaseErrors.userNotFound.code) {
     return c.json({
       data: null,
       error: 'User Not Found'
@@ -219,7 +220,7 @@ app.post('/logout', async (c) => {
     console.error(error);
     return c.json({
       data: null,
-      error: errors.internalServerError
+      error: mockabaseErrors.internalServerError
     });
   }
 });
@@ -236,7 +237,7 @@ app.get('/get-current-session', async (c) => {
     console.error(error);
     return c.json({
       data: null,
-      error: errors.internalServerError
+      error: mockabaseErrors.internalServerError
     });
   }
 });
@@ -256,7 +257,7 @@ app.delete('/delete-user/:userId', async (c) => {
     console.error(error);
     return c.json({
       data: null,
-      error: errors.internalServerError
+      error: mockabaseErrors.internalServerError
     });
   }
 });
@@ -282,7 +283,7 @@ app.delete('/delete-multiple-users', async (c) => {
     console.error(error);
     return c.json({
       data: null,
-      error: errors.internalServerError
+      error: mockabaseErrors.internalServerError
     });
   }
 });
@@ -299,7 +300,7 @@ app.delete('/clear', async (c) => {
     console.error(error);
     return c.json({
       data: null,
-      error: errors.internalServerError
+      error: mockabaseErrors.internalServerError
     });
   }
 });
