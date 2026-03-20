@@ -2,7 +2,6 @@ import type { MockabaseUserReturnObject } from "../../typedefs/MockabaseUserRetu
 import { v4 as uuidv4 } from 'uuid';
 import { comparePasswords } from '../../helper/comparePasswords';
 import { hash } from '../../helper/hash';
-import { checkUserExistsByEmail, getUserByEmail } from "./delete";
 import { success, failure, type DataErrorReturnObject } from "dataerror";
 import type { UserSessionObject } from '../../typedefs/UserSessionObject';
 import { toPostgresTimestampUTC } from '../../helper/timestampFunctions';
