@@ -16,18 +16,24 @@ This is not a commercial project and I'm not making money from it.  The name Sup
 Mockabase uses an embedded SQLite database (in a file called mockabase.sqlite) with a users table that loosely mocks the ```auth.users``` table in Supabase.  There are various routes for all expected user functions (including a mock "OAuth" login and signup) detailed in the routes section below.  "Sessions" are currently handled with a JSON file at the root of the project called ```session.json```, which is either null if logged out or has the id and e-mail of the current user if logged in.  I consider this an acceptable minimal way to mock sessions for testing and development purposes.
 
 ## Why SQLite and not PostgreSQL?
-Although Supabase uses Postgres under the hood, as of September 2025, Mockabase uses an embedded SQLite database for simplicity and portability.  When Mockabase was using PostgreSQL, the user was required to have PostgreSQL installed and set up locally, and then set up a local database as part of the setup process for Mockabase.  With SQLite, the database is simply a file that is created as soon as the user starts Mockabase, with most of the same functionality and no need for a local install.  Any relevant Postgres-exclusive functions such as timestamps and UUIDs are handled within Mockabase's code rather than in the database.  We recommend using [TablePlus](https://tableplus.com/) to look at the SQLite database directly if needed.
+Although Supabase uses Postgres under the hood, as of September 2025, Mockabase uses an embedded SQLite database for simplicity and portability.  When Mockabase was using PostgreSQL, the user was required to have PostgreSQL installed and set up locally, and then set up a local database as part of the setup process for Mockabase.  With SQLite, the database is simply a file that is created as soon as the user starts Mockabase, with most of the same functionality and no need for a local install.  Any relevant Postgres-exclusive functions such as timestamps and UUIDs are handled within Mockabase's code rather than in the database.  We recommend using [TablePlus](https://tableplus.com/) to look at the SQLite database directly should the need arise.
 
-# Major breaking changes in version 2.0
+# Major breaking changes
+## version 4.0
+Add phone signup and login, add mock OTP functions, organize all routes by type.  Major breaking changes to Mockabase schemas, routes, and APIs all around to make these changes happen.  Changes to the Mockabase client, which we encourage using, are fairly minimal aside from the addition of new functions.
+
+Mockabase now also uses the [dataerror](https://www.npmjs.com/package/dataerror) package as a core dependency and most return statements have been rewritten to use dataerror.
+
+## version 3.0
+All functions in the Mockabase client are now under a singular "auth" object, in order to mirror the Supabase API even more accurately.
+
+## version 2.0
 ```signup```, ```login```, and ```get-current-session``` routes now return objects in the following format:
 ```{ data: { user: User } | null, error: error | null } ```
 
 This more closely mirrors the Supabase API.
 
-Errors are now returned as Supabase-like error objects instead of strings, to more closely mirror the Supabase API.  For a complete reference of all error objects returned by Mockabase, see the ```src/data/errors.ts``` file.
-
-# Major breaking changes in version 3.0
-All functions in the Mockabase client are now under a singular "auth" object, in order to mirror the Supabase API even more accurately.
+Errors are now returned as Supabase-like error objects instead of strings, to more closely mirror the Supabase API.  For a complete reference of all error objects returned by Mockabase, see the dataerror documentation an the ```src/data/mockabaseErrors.ts``` file.
 
 # Installation
 
@@ -105,7 +111,7 @@ mockabase
 ├── package.json - NPM package.json file
 ├── package-lock.json - NPM package-lock.json file
 ├── README.md - this file
-├── session.json - JSON file that stores all mock "session" data - null if logged out, { id, email } of logged-in user if logged in
+├── session.json - JSON file that stores all mock "session" data - null if logged out, session data of logged-in user if logged in
 ├── tsconfig.json - TypeScript config
 ```
 

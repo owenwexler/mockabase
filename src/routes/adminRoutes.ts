@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { UserSessionObject } from "../typedefs/UserSessionObject";
 import { failure, success } from "dataerror";
-import { deleteAllUsers, deleteMultipleUsers, deleteUser, emailPasswordSignup } from "../db/models/user";
+import { deleteAllUsers, deleteMultipleUsers, deleteUser, emailPasswordSignup } from "../db/models/delete";
 
 const adminRoutes = new Hono();
 

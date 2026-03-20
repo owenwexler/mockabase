@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { emailPasswordLogin } from "../db/models/user";
+import { emailPasswordLogin } from "../db/models/delete";
 import { mockabaseErrors } from "../data/mockabaseErrors";
 import { createSession } from "../session/sessionFunctions";
 

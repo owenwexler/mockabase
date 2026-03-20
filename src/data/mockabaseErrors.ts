@@ -1,6 +1,12 @@
 import { errors, type ErrorsObject, type ErrorType } from "dataerror";
 
-export const mockabaseErrors: ErrorsObject = {
+interface MockabaseErrorsObject extends ErrorsObject {
+  invalidOTP: ErrorType;
+  missingOTP: ErrorType;
+  invalidPhoneNumber: ErrorType;
+}
+
+export const mockabaseErrors: MockabaseErrorsObject = {
   ...errors,
   invalidOTP: {
     code: 'invalid_otp',

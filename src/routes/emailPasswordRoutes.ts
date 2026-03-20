@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { getTypedEmailPasswordFromBody } from "../helper/getTypedEmailPasswordFromBody";
-import { changeUserPassword, emailPasswordLogin, emailPasswordSignup } from "../db/models/user";
+import { changeUserPassword, emailPasswordLogin, emailPasswordSignup } from "../db/models/emailPasswordAuth";
 import { mockabaseErrors } from "../data/mockabaseErrors";
 import { createSession, getCurrentSession } from "../session/sessionFunctions";
 import { failure, success } from "dataerror";
