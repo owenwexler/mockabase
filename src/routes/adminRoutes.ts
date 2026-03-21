@@ -1,21 +1,38 @@
 import { Hono } from "hono";
 import type { UserSessionObject } from "../typedefs/UserSessionObject";
 import { failure, success } from "dataerror";
-import { deleteAllUsers, deleteMultipleUsers, deleteUser, emailPasswordSignup } from "../db/models/delete";
+import { deleteAllUsers, deleteMultipleUsers, deleteUser } from "../db/models/delete";
+import { emailPasswordSignup } from "../db/models/emailPasswordAuth";
+import { phoneSignup } from "../db/models/phoneAuth";
+import { oauthSignup } from "../db/models/oauth";
+import { emailPasswordlessSignup } from "../db/models/emailPasswordlessAuth";
+import { seedData } from "../data/seedData";
 
 const adminRoutes = new Hono();
 
 adminRoutes.post('/seed', async (c) => {
   console.log('POST /seed');
-  const body = await c.req.json();
 
   try {
     const promises = [];
 
-    for (const obj of body) {
-      const { id, email, password } = obj;
+    for (const obj of seedData) {
+      const { id, email, password, phoneNumber, providerType, oauthProvider, otp } = obj;
 
-      promises.push(emailPasswordSignup({ id, email, password }));
+      switch(providerType) {
+        case 'email-password':
+          promises.push(emailPasswordSignup({ id, email: email!, password: password! }));
+          break;
+        case 'phone':
+          promises.push(phoneSignup({ id, phoneNumber: phoneNumber!, staticOTP: '123456' }));
+          break;
+        case 'oauth':
+          promises.push(oauthSignup({ id, email: email!, oauthProvider: oauthProvider! }));
+          break;
+        case 'email-passwordless':
+          promises.push(emailPasswordlessSignup({ id, email: email!, staticOTP: '123456' }));
+          break;
+      }
     }
 
     const responses = await Promise.allSettled(promises);

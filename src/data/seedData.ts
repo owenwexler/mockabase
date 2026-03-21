@@ -44,7 +44,7 @@ const seedData: NewUser[] = [
     password: null,
     phoneNumber: null,
     providerType: 'oauth',
-    oauthProvider: null,
+    oauthProvider: 'google',
     otp: null
   },
   {
