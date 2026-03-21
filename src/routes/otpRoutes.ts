@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { AssignOTPArgs } from "../typedefs/AssignOTPArgs";
 import type { VerifyOTPArgs } from "../typedefs/VerifyOTPArgs";
 import type { ShowOTPResult } from "../typedefs/ShowOTPResult";
-import { assignOTP, verifyOTP, clearOTP, showOTP } from "../db/models/otp";
+import { assignOtp, verifyOtp, clearOtp, showOtp } from "../db/models/otp";
 import { mockabaseErrors } from "../data/mockabaseErrors";
 import { failure, success } from "dataerror";
 import type { ShowOTPArgs } from "../typedefs/ShowOTPArgs";
@@ -22,7 +22,7 @@ otpRoutes.post('/assign-otp', async (c) => {
   }
 
   try {
-    const response = await assignOTP(args!);
+    const response = await assignOtp(args!);
 
     if (response.error) {
       const result = await failure<'ok'>(response.error, 'routes/otp/assign-otp');
@@ -49,7 +49,7 @@ otpRoutes.post('/verify-otp', async (c) => {
   }
 
   try {
-    const response = await verifyOTP(args!);
+    const response = await verifyOtp(args!);
 
     if (response.error) {
       const result = await failure<'ok'>(response.error, 'routes/otp/verify-otp');
@@ -76,7 +76,7 @@ otpRoutes.post('/clear-otp', async (c) => {
   }
 
   try {
-    const response = await clearOTP(id);
+    const response = await clearOtp(id);
 
     if (response.error) {
       const result = await failure<null>(response.error, 'routes/otp/clear-otp');
@@ -103,7 +103,7 @@ otpRoutes.post('/show-otp', async (c) => {
   }
 
   try {
-    const response = await showOTP(args!);
+    const response = await showOtp(args!);
 
     if (response!.error) {
       const result = await failure<ShowOTPResult>(response!.error, 'routes/otp/show-otp');

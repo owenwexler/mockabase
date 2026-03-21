@@ -8,15 +8,11 @@ import { generateRandomOTP } from "../../helper/generateRandomOTP";
 import { toPostgresTimestampUTC } from "../../helper/timestampFunctions";
 import db from "../db";
 import { blankSession } from "../../data/blankObjects";
-import { clearOTP } from "./otp";
+import { clearOtp } from "./otp";
+import type { EmailPasswordlessSignupArgs } from "../../typedefs/EmailPasswordlessSignupArgs";
 
-interface EmailPasswordlessSignupArgs {
-  id?: string;
-  email: string;
-  staticOTP?: string; // sometimes we want a static OTP for consistent test results
-}
-
-const emailPasswordlessSignup = async (args: EmailPasswordlessSignupArgs): Promise<MockabaseUserReturnObject> => {
+const emailPasswordlessSignup = async (args: EmailPasswordlessSignupArgs
+): Promise<MockabaseUserReturnObject> => {
   const { email } = args;
 
   const emailConfirmedAt = toPostgresTimestampUTC(new Date());
@@ -61,7 +57,7 @@ const emailPasswordlessLogin = async (args: EmailPasswordlessSignupArgs): Promis
     }
 
     // clear the OTP once successfully logged in
-    await clearOTP(user.id);
+    await clearOtp(user.id);
 
     return await success<UserSessionObject>({ session: { id: user.id, email: user.email!, phoneNumber: null, providerType: 'email-passwordless', oauthProvider: null } });
   } catch (error) {

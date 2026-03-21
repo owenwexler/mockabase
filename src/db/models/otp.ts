@@ -10,7 +10,7 @@ import type { ShowOTPResult } from "../../typedefs/ShowOTPResult";
 import { mockabaseErrors } from "../../data/mockabaseErrors";
 import type { User } from "../../typedefs/User";
 
-const assignOTP = async (args: AssignOTPArgs): Promise<DataErrorReturnObject<'ok'>> => {
+const assignOtp = async (args: AssignOTPArgs): Promise<DataErrorReturnObject<'ok'>> => {
   const { providerType, email, phoneNumber } = args;
 
   const otp = generateRandomOTP(6);
@@ -32,7 +32,7 @@ const assignOTP = async (args: AssignOTPArgs): Promise<DataErrorReturnObject<'ok
   }
 }
 
-const verifyOTP = async (args: VerifyOTPArgs): Promise<DataErrorReturnObject<'ok'>> => {
+const verifyOtp = async (args: VerifyOTPArgs): Promise<DataErrorReturnObject<'ok'>> => {
   const { providerType, email, phoneNumber, otp } = args;
 
   let query: Statement<unknown[], unknown>;
@@ -61,7 +61,7 @@ const verifyOTP = async (args: VerifyOTPArgs): Promise<DataErrorReturnObject<'ok
   }
 }
 
-const clearOTP = async (id: string): Promise<DataErrorReturnObject<null>> => {
+const clearOtp = async (id: string): Promise<DataErrorReturnObject<null>> => {
   try {
     const query = db.prepare('UPDATE users SET otp = NULL WHERE id = ?')
     const response = query.run(id);
@@ -74,7 +74,7 @@ const clearOTP = async (id: string): Promise<DataErrorReturnObject<null>> => {
 
 // part of a route that is used in development as a substitute for checking e-mail or text messages to get the OTP
 
-const showOTP = async (args: ShowOTPArgs) => {
+const showOtp = async (args: ShowOTPArgs) => {
   const { userIdentifier, providerType } = args;
 
   try {
@@ -97,8 +97,8 @@ const showOTP = async (args: ShowOTPArgs) => {
 }
 
 export {
-  assignOTP,
-  verifyOTP,
-  clearOTP,
-  showOTP
+  assignOtp,
+  verifyOtp,
+  clearOtp,
+  showOtp
 }

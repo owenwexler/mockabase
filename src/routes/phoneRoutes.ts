@@ -52,8 +52,10 @@ phoneRoutes.post('/signup', async (c) => {
 
   const id = body['id'] ? body['id'].toString() : uuidv4();
 
+  const staticOTP = body['staticOTP'] ? body['staticOTP'].toString() : null;
+
   try {
-    const result = await phoneSignup({ id, phoneNumber });
+    const result = await phoneSignup({ id, phoneNumber, staticOTP });
     // OTP is also generated inside of the signup function
 
     if (result.error) {

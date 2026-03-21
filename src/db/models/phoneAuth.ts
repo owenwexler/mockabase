@@ -11,11 +11,7 @@ import type { User } from "../../typedefs/User";
 import type { MockabaseUserReturnObject } from "../../typedefs/MockabaseUserReturnObject";
 import { generateRandomOTP } from "../../helper/generateRandomOTP";
 import { clearOTP } from "./otp";
-
-interface PhoneSignupArgs extends GenericUserPhoneArgs {
-  id?: string;
-  staticOTP?: string; // sometimes we want a static OTP for consistent test results
-}
+import type { PhoneSignupArgs } from "../../typedefs/PhoneSignupArgs";
 
 const phoneSignup = async (args: PhoneSignupArgs) => {
   const { phoneNumber } = args;

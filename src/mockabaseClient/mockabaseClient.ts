@@ -3,6 +3,11 @@ import type { OAuthProvider } from "../typedefs/OAuthProvider";
 import type { MockabaseUserReturnObject } from "../typedefs/MockabaseUserReturnObject";
 import { failure } from "dataerror";
 import type { AssignOTPArgs } from "../typedefs/AssignOTPArgs";
+import type { VerifyOTPArgs } from "../typedefs/VerifyOTPArgs";
+import type { PhoneSignupArgs } from "../typedefs/PhoneSignupArgs";
+import type { GenericUserPhoneArgs } from "../typedefs/GenericUserPhoneArgs";
+import type { EmailPasswordlessSignupArgs } from "../typedefs/EmailPasswordlessSignupArgs";
+import type { ShowOTPArgs } from "../typedefs/ShowOTPArgs";
 
 interface CreateMockbaseClientArgs {
   mockabaseUrl: string;
@@ -55,32 +60,6 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
           return await failure<null>(error, 'mockabaseClient/signInWithPassword');
         }
       },
-      signInWithOAuth: async function (args: { provider: OAuthProvider }) {
-        const { provider } = args;
-
-        try {
-          const response = await typedFetch<MockabaseUserReturnObject>({
-            url: `${mockabaseUrl}/mock-oauth/${provider}`,
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          });
-
-          return response;
-        } catch (error) {
-          return await failure<null>(error, 'mockabaseClient/signInWithOAuth');
-        }
-      },
-      signOut: async function () {
-        const response = await typedFetch<MockabaseUserReturnObject>({
-          url: `${mockabaseUrl}/logout`,
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-      },
       signUpWithPassword: async function (args: { id: string, email: string, password: string }) {
         const { id, email, password } = args;
 
@@ -103,12 +82,29 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
           return await failure<null>(error, 'mockabaseClient/signUpWithPassword');
         }
       },
-      signUpWithOAuth: async function(args: { provider: OAuthProvider }) {
-        const { provider } = args;
+      updateUser: async function (args: { email: string, newPassword: string }) {
+        try {
+          const response = await typedFetch<MockabaseUserReturnObject>({
+            url: `${mockabaseUrl}/change-password`,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(args)
+          });
+
+          return response;
+        } catch (error) {
+          return await failure<null>(error, 'mockabaseClient/updateUser');
+        }
+      },
+      signUpWithOAuth: async function(args: { email: string, provider: OAuthProvider }) {
+        const { email, provider } = args;
 
         try {
           const response = await typedFetch<MockabaseUserReturnObject>({
-            url: `${mockabaseUrl}/mock-oauth/${provider}`,
+            url: `${mockabaseUrl}/oauth/signup/${provider}`,
+            body: JSON.stringify({ email }),
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -120,27 +116,162 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
           return await failure<null>(error, 'mockabaseClient/signUpWithOAuth');
         }
       },
-      updateUser: async function (args: { email: string, newPassword: string }) {
+      signInWithOAuth: async function (args: { email: string, provider: OAuthProvider }) {
+        const { email, provider } = args;
+
         try {
+          const response = await typedFetch<MockabaseUserReturnObject>({
+            url: `${mockabaseUrl}/oauth/login/${provider}`,
+            method: 'POST',
+            body: JSON.stringify({ email }),
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+
+          return response;
+        } catch (error) {
+          return await failure<null>(error, 'mockabaseClient/signInWithOAuth');
+        }
+      },
+      signUpWithPhone: async function (args: PhoneSignupArgs) {
+        try {
+          const response = await typedFetch<MockabaseUserReturnObject>({
+            url: `${mockabaseUrl}/phone/signup`,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(args)
+          });
+
+          return response;
+        } catch (error) {
+          return await failure<null>(error, 'mockabaseClient/signUpWithPhone');
+        }
+      },
+      signInWithPhone: async function (args: GenericUserPhoneArgs) {
+        try {
+          const response = await typedFetch<MockabaseUserReturnObject>({
+            url: `${mockabaseUrl}/phone/login`,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(args)
+          });
+
+          return response;
+        } catch (error) {
+          return await failure<null>(error, 'mockabaseClient/signInWithPhone');
+        }
+      },
+      signUpWithEmailPasswordless: async function (args: EmailPasswordlessSignupArgs) {
+        try {
+          const response = await typedFetch<MockabaseUserReturnObject>({
+            url: `${mockabaseUrl}/email-passwordless/signup`,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(args)
+          });
+
+          return response;
+        } catch (error) {
+          return await failure<null>(error, 'mockabaseClient/signUpWithEmailPasswordless');
+        }
+      },
+      signInWithEmailPasswordless: async function (args: EmailPasswordlessSignupArgs) {
+        try {
+          const response = await typedFetch<MockabaseUserReturnObject>({
+            url: `${mockabaseUrl}/email-passwordless/login`,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(args)
+          });
+
+          return response;
+        } catch (error) {
+          return await failure<null>(error, 'mockabaseClient/signInWithEmailPasswordless');
+        }
+      },
+      // Supabase uses Otp in their function names instead of OTP so this is what we are doing
+      assignOtp: async function (args: AssignOTPArgs) {
+        try {
+          const response = await typedFetch<MockabaseUserReturnObject>({
+            url: `${mockabaseUrl}/otp/assign-otp`,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(args)
+          });
+
+          return response;
+        } catch (error) {
+          return await failure<null>(error, 'mockabaseClient/assignOtp');
+        }
+      },
+      verifyOtp: async function (args: VerifyOTPArgs) {
+        try {
+          const response = await typedFetch<MockabaseUserReturnObject>({
+            url: `${mockabaseUrl}/otp/verify-otp`,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(args)
+          });
+
+          return response;
+        } catch (error) {
+          return await failure<null>(error, 'mockabaseClient/verifyOtp');
+        }
+      },
+      clearOtp: async function (id: string) {
+        try {
+          const response = await typedFetch<MockabaseUserReturnObject>({
+            url: `${mockabaseUrl}/otp/clear-otp`,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id })
+          });
+
+          return response;
+        } catch (error) {
+          return await failure<null>(error, 'mockabaseClient/clearOtp');
+        }
+      },
+      showOtp: async function (args: ShowOTPArgs) {
+        try {
+          const response = await typedFetch<MockabaseUserReturnObject>({
+            url: `${mockabaseUrl}/otp/show-otp`,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(args)
+          });
+
+          return response;
+        } catch (error) {
+          return await failure<null>(error, 'mockabaseClient/showOtp');
+        }
+      },
+      signOut: async function () {
         const response = await typedFetch<MockabaseUserReturnObject>({
-          url: `${mockabaseUrl}/change-password`,
+          url: `${mockabaseUrl}/logout`,
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(args)
+          }
         });
-
-        return response;
-      } catch (error) {
-        return await failure<null>(error, 'mockabaseClient/updateUser');
-      }
-    },
-    assignOTP: async function (args: AssignOTPArgs) {
-      // TODO: write this
-    },
-    verifyOTP: async function (args: VerifyOTPArgs) {
-      // TODO: write this
+      },
     }
   }
 }
