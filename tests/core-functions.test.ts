@@ -8,7 +8,7 @@ import type { MockabaseUserReturnObject } from '../src/typedefs/MockabaseUserRet
 import { createMockabaseClient } from '../src/mockabaseClient/mockabaseClient';
 import { mockabaseErrors } from '../src/data/mockabaseErrors';
 
-const { mockOAuthEmail, hostUrl } = testEnv;
+const { hostUrl } = testEnv;
 
 const emptySessionObject: MockabaseUserReturnObject = { data: null, error: null };
 const wrongPasswordErrorObject: MockabaseUserReturnObject = { data: null, error: mockabaseErrors.invalidCredentials };
@@ -73,71 +73,75 @@ describe('Core functions', () => {
     expect(session).toEqual({ data: null, error: null });
   });
 
-  // test.each(wrongPasswordTestCases)('attempting to login as one of the seeded users with both a blatantly wrong password and a password with one character off returns the proper error', async ({ input, expected }) => {
-  //   const result = await mockabaseClient.auth.signInWithPassword(input);
-  //   expect(result).toEqual(expected);
-  //   await mockabaseClient.auth.signOut();
-  // });
+  test.each(wrongPasswordTestCases)('attempting to login as one of the seeded users with both a blatantly wrong password and a password with one character off returns the proper error', async ({ input, expected }) => {
+    const result = await mockabaseClient.auth.signInWithPassword(input);
+    expect(result).toEqual(expected);
+    await mockabaseClient.auth.signOut();
+  });
 
-  // test('attempting to log in as a nonexistent user returns the proper error', async () => {
-  //   const session = await mockabaseClient.auth.signInWithPassword({ email: 'thisuser@doesntexist.com', password: 'doesntexist' });
-  //   expect(session).toEqual(nonexistentUserErrorObject);
-  //   await mockabaseClient.auth.signOut();
-  // });
+  test('attempting to log in as a nonexistent user returns the proper error', async () => {
+    const session = await mockabaseClient.auth.signInWithPassword({ email: 'thisuser@doesntexist.com', password: 'doesntexist' });
+    expect(session).toEqual(nonexistentUserErrorObject);
+    await mockabaseClient.auth.signOut();
+  });
 
-  // test('attempting to sign up with the email of an already existing user returns the proper error', async () => {
-  //   const response = await mockabaseClient.auth.signUpWithPassword({ id: 'd6829dc1-4bd5-425e-9b7f-14f3a721aaa8', email: seedData[0].email!, password: 'doesntexist' });
-  //   expect(response).toEqual(userAlreadyExistsErrorObject);
-  // });
+  test('attempting to sign up with the email of an already existing user returns the proper error', async () => {
+    const response = await mockabaseClient.auth.signUpWithPassword({ id: 'd6829dc1-4bd5-425e-9b7f-14f3a721aaa8', email: seedData[0].email!, password: 'doesntexist' });
+    expect(response).toEqual(userAlreadyExistsErrorObject);
+  });
 
-  // test('a new test user can be signed up successfully and a logged-in session by email returns the new user', async () => {
-  //   const signupResult = await mockabaseClient.auth.signUpWithPassword(newTestUser);
-  //   expect(signupResult).toEqual({
-  //     data: { user: { id: newTestUser.id, email: newTestUser.email } },
-  //     error: null
-  //   });
+  test('a new test user can be signed up successfully and a logged-in session by email returns the new user', async () => {
+    const correctNewTestUserResult = { session: { id: newTestUser.id, email: newTestUser.email, phoneNumber: null, providerType: 'email-password', oauthProvider: null } };
 
-  //   await mockabaseClient.auth.signOut();
+    const signupResult = await mockabaseClient.auth.signUpWithPassword(newTestUser);
+    expect(signupResult).toEqual({
+      data: correctNewTestUserResult,
+      error: null
+    });
 
-  //   const result = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: newTestUser.password });
+    await mockabaseClient.auth.signOut();
 
-  //   expect(result).toEqual({
-  //     data: { user: { id: newTestUser.id, email: newTestUser.email } },
-  //     error: null
-  //   });
+    const result = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: newTestUser.password });
 
-  //   await mockabaseClient.auth.signOut();
-  // });
+    expect(result).toEqual({
+      data: correctNewTestUserResult,
+      error: null
+    });
 
-  // test('a user can change their password successfully when logged in, the old password does not work after change and the new password works', async () => {
-  //   const login = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: newTestUser.password });
+    await mockabaseClient.auth.signOut();
+  });
 
-  //   const changePasswordResult = await changeTestUserPassword();
+  test('a user can change their password successfully when logged in, the old password does not work after change and the new password works', async () => {
+    const correctNewTestUserResult = { session: { id: newTestUser.id, email: newTestUser.email, phoneNumber: null, providerType: 'email-password', oauthProvider: null } };
 
-  //   await mockabaseClient.auth.signOut();
+    const login = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: newTestUser.password });
 
-  //   const loginWithOldPassword = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: newTestUser.password });
-  //   expect(loginWithOldPassword).toEqual({
-  //     data: null,
-  //     error: mockabaseErrors.invalidCredentials
-  //   });
+    const changePasswordResult = await changeTestUserPassword();
 
-  //   const loginWithNewPassword = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: 'testtesttest' });
-  //   expect(loginWithNewPassword).toEqual({
-  //     data: { user: { id: newTestUser.id, email: newTestUser.email } },
-  //     error: null
-  //   });
+    await mockabaseClient.auth.signOut();
 
-  //   await mockabaseClient.auth.signOut();
-  // });
+    const loginWithOldPassword = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: newTestUser.password });
+    expect(loginWithOldPassword).toEqual({
+      data: null,
+      error: mockabaseErrors.invalidCredentials
+    });
 
-  // test('the test user can be deleted successfully, and attempting to log in with the deleted test user returns the proper error', async () => {
-  //   const deletionResult = await testDeleteUser(newTestUser.id);
-  //   expect(deletionResult).toEqual(emptySessionObject);
+    const loginWithNewPassword = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: 'testtesttest!2' });
+    expect(loginWithNewPassword).toEqual({
+      data: correctNewTestUserResult,
+      error: null
+    });
 
-  //   const deletedUserSession = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: newTestUser.password });
-  //   expect(deletedUserSession).toEqual(nonexistentUserErrorObject);
-  // });
+    await mockabaseClient.auth.signOut();
+  });
+
+  test('the test user can be deleted successfully, and attempting to log in with the deleted test user returns the proper error', async () => {
+    const deletionResult = await testDeleteUser(newTestUser.id);
+    expect(deletionResult).toEqual(emptySessionObject);
+
+    const deletedUserSession = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: newTestUser.password });
+    expect(deletedUserSession).toEqual(nonexistentUserErrorObject);
+  });
 
   /*
   NEW TESTS (put all of these new tests before the afterAll hook):
@@ -153,9 +157,10 @@ describe('Core functions', () => {
     - a new phone number user ("+6312345678910") can be signed up with a static OTP ("123456")
     - trying to log in the new user without an OTP returns the correct error (mockabaseErrors.missingOTP)
     - trying to verify OTP on the new user with an incorrect OTP returns the proper error (mockabaseErrors.invalidOTP)
+    - delete the new phone user and verify that attempting to log in as the newly deleted user returns the proper error (mockabaseError.userNotFound)
 
-  - Passwordless e-mail signup/login:
-    - please write a similar suite of tests as the above phone login/signup tests but for passwordless e-mail signups, which work in an almost identical manner in Mockabase
+    - Passwordless e-mail signup/login:
+    - please write an identical suite of tests as the above phone login/signup tests but for passwordless e-mail signups, which work in an almost identical manner in Mockabase
 
   - OAuth login
     - Trying to login an existing OAuth user (example@gmail.com) with the wrong provider ("discord") returns the correct error (mockabaseErrors.badOAuthCallback)
@@ -164,6 +169,9 @@ describe('Core functions', () => {
     - A new OAuth user ("example@apple.com") can be signed up with the "apple" oauth provider
     - Logging in the new OAuth user with the wrong provider ("facebook") returns the correct error message (mockabaseErrors.badOAuthCallback)
     - Logging in the new OAuth user with the proper provider is successful, log out the OAuth user after verifying a successful session
+    - delete the new OAuth user and verify that attempting to log in as the newly deleted user returns the proper error (mockabaseError.userNotFound)
+
+    Group any actions that depend on each other in one test.
   */
 
   // re-seed the test users into the DB after the tests are finished

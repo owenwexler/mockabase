@@ -46,8 +46,8 @@ const emailPasswordlessLogin = async (args: EmailPasswordlessSignupArgs): Promis
   try {
     const userResponse = await getUserByEmail(email);
 
-    if (userResponse.error && userResponse.error.code == 'user_not_found') {
-      return await failure<UserSessionObject>(mockabaseErrors.userAlreadyExists, 'models/emailPasswordLogin');
+    if (userResponse.error) {
+      return await failure<UserSessionObject>(userResponse.error, 'models/emailPasswordLogin');
     }
 
     const user = userResponse.data!;

@@ -10,7 +10,6 @@ import db from "../db";
 import type { User } from "../../typedefs/User";
 import type { MockabaseUserReturnObject } from "../../typedefs/MockabaseUserReturnObject";
 import { generateRandomOTP } from "../../helper/generateRandomOTP";
-import { clearOtp } from "./otp";
 import type { PhoneSignupArgs } from "../../typedefs/PhoneSignupArgs";
 
 const phoneSignup = async (args: PhoneSignupArgs) => {
