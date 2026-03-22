@@ -143,36 +143,191 @@ describe('Core functions', () => {
     expect(deletedUserSession).toEqual(nonexistentUserErrorObject);
   });
 
-  /*
-  NEW TESTS (put all of these new tests before the afterAll hook):
-  - Phone login (always to be gated by an OTP verification):
-  * when using assignOtp or any signup function, use the optional { staticOTP } argument to assign a static non-random OTP to the new user for testability
-    - trying to log in an existing phone user (use "+13011234567", which is seeded into the DB at the beginning of the test run with the OTP "123456") without a verified OTP first returns the correct error (mockabaseErrors.missingOTP)
-    - trying to verify OTP on an an existing phone user with an incorrect OTP ("654321") returns the correct error (mockabaseErrors.invalidOTP)
-    - a new OTP (staticOTP: "234567") can be assigned to an existing phone number
-    - verification with the new OTP ("234567") on the new phone number is successful and the phone number user can be logged in successfully
-    - once logged in, the OTP is cleared from the user (check this with showOtp function in Mockabase client)
-    - log out existing user
-    - attempting to sign up an already existing phone number user returns the proper error (mockabaseErrors.userAlreadyExists)
-    - a new phone number user ("+6312345678910") can be signed up with a static OTP ("123456")
-    - trying to log in the new user without an OTP returns the correct error (mockabaseErrors.missingOTP)
-    - trying to verify OTP on the new user with an incorrect OTP returns the proper error (mockabaseErrors.invalidOTP)
-    - delete the new phone user and verify that attempting to log in as the newly deleted user returns the proper error (mockabaseError.userNotFound)
+  // Phone login (gated by OTP verification)
 
-    - Passwordless e-mail signup/login:
-    - please write an identical suite of tests as the above phone login/signup tests but for passwordless e-mail signups, which work in an almost identical manner in Mockabase
+  test('existing phone user: login returns missingOTP when OTP is unverified, wrong OTP returns invalidOTP, new OTP can be assigned, verification succeeds and login succeeds, OTP is cleared after login, signing up an existing phone number returns userAlreadyExists', async () => {
+    const existingPhoneUser = seedData.find(u => u.phoneNumber === '+13011234567')!;
+    const existingPhoneSession = { data: { session: { id: existingPhoneUser.id, email: null, phoneNumber: '+13011234567', providerType: 'phone', oauthProvider: null } }, error: null };
 
-  - OAuth login
-    - Trying to login an existing OAuth user (example@gmail.com) with the wrong provider ("discord") returns the correct error (mockabaseErrors.badOAuthCallback)
-    - Logging in an existing OAuth user with the proper provider ("google") is successful, log out the OAuth user after verifying a successful session
-    - attempting to sign up a new OAuth user with an already-used e-mail address returns the proper error (mockabaseErrors.userAlreadyExists)
-    - A new OAuth user ("example@apple.com") can be signed up with the "apple" oauth provider
-    - Logging in the new OAuth user with the wrong provider ("facebook") returns the correct error message (mockabaseErrors.badOAuthCallback)
-    - Logging in the new OAuth user with the proper provider is successful, log out the OAuth user after verifying a successful session
-    - delete the new OAuth user and verify that attempting to log in as the newly deleted user returns the proper error (mockabaseError.userNotFound)
+    // assign OTP "123456" to the seeded phone user
+    await mockabaseClient.auth.assignOtp({ providerType: 'phone', phoneNumber: '+13011234567', staticOTP: '123456' });
 
-    Group any actions that depend on each other in one test.
-  */
+    // login without verified OTP → missingOTP
+    const loginWithoutOtp = await mockabaseClient.auth.signInWithPhone({ phoneNumber: '+13011234567' });
+    expect(loginWithoutOtp).toEqual({ data: null, error: mockabaseErrors.missingOTP });
+
+    // verify with incorrect OTP → invalidOTP
+    const wrongOtpResult = await mockabaseClient.auth.verifyOtp({ providerType: 'phone', phoneNumber: '+13011234567', otp: '654321' });
+    expect(wrongOtpResult).toEqual({ data: null, error: mockabaseErrors.invalidOTP });
+
+    // assign new OTP "234567"
+    const assignOtpResult = await mockabaseClient.auth.assignOtp({ providerType: 'phone', phoneNumber: '+13011234567', staticOTP: '234567' });
+    expect(assignOtpResult.error).toBeNull();
+
+    // verify with "234567" → success
+    const verifyResult = await mockabaseClient.auth.verifyOtp({ providerType: 'phone', phoneNumber: '+13011234567', otp: '234567' });
+    expect(verifyResult).toEqual({ data: 'ok', error: null });
+
+    // login → success
+    const loginResult = await mockabaseClient.auth.signInWithPhone({ phoneNumber: '+13011234567' });
+    expect(loginResult).toEqual(existingPhoneSession);
+
+    // OTP is cleared — showOtp returns missingOTP
+    const showOtpResult = await mockabaseClient.auth.showOtp({ userIdentifier: '+13011234567', providerType: 'phone' });
+    expect(showOtpResult).toEqual({ data: null, error: mockabaseErrors.missingOTP });
+
+    await mockabaseClient.auth.signOut();
+
+    // signing up existing phone number → userAlreadyExists
+    const signupExistingResult = await mockabaseClient.auth.signUpWithPhone({ phoneNumber: '+13011234567' });
+    expect(signupExistingResult).toEqual({ data: null, error: mockabaseErrors.userAlreadyExists });
+  });
+
+  test('new phone user: signup succeeds, login returns missingOTP before OTP is verified, wrong OTP returns invalidOTP, deleting the user and attempting to log in returns userNotFound', async () => {
+    const newPhoneUserId = 'f1a2b3c4-d5e6-7890-abcd-ef1234567890';
+    const newPhoneNumber = '+6312345678910';
+    const newPhoneSession = { data: { session: { id: newPhoneUserId, email: null, phoneNumber: newPhoneNumber, providerType: 'phone', oauthProvider: null } }, error: null };
+
+    // signup new phone user with static OTP
+    const signupResult = await mockabaseClient.auth.signUpWithPhone({ id: newPhoneUserId, phoneNumber: newPhoneNumber, staticOTP: '123456' });
+    expect(signupResult).toEqual(newPhoneSession);
+
+    // login without verified OTP → missingOTP
+    const loginWithoutOtp = await mockabaseClient.auth.signInWithPhone({ phoneNumber: newPhoneNumber });
+    expect(loginWithoutOtp).toEqual({ data: null, error: mockabaseErrors.missingOTP });
+
+    // verify with incorrect OTP → invalidOTP
+    const wrongOtpResult = await mockabaseClient.auth.verifyOtp({ providerType: 'phone', phoneNumber: newPhoneNumber, otp: '654321' });
+    expect(wrongOtpResult).toEqual({ data: null, error: mockabaseErrors.invalidOTP });
+
+    // delete the new phone user
+    const deletionResult = await testDeleteUser(newPhoneUserId);
+    expect(deletionResult).toEqual(emptySessionObject);
+
+    // login after deletion → userNotFound
+    const loginAfterDeletion = await mockabaseClient.auth.signInWithPhone({ phoneNumber: newPhoneNumber });
+    expect(loginAfterDeletion).toEqual({ data: null, error: mockabaseErrors.userNotFound });
+  });
+
+  // Passwordless e-mail signup/login
+
+  test('existing passwordless email user: login returns missingOTP when no OTP is assigned, wrong OTP returns invalidOTP, new OTP can be assigned, login succeeds and OTP is cleared, signing up an existing passwordless email returns userAlreadyExists', async () => {
+    const existingPasswordlessUser = seedData.find(u => u.email === 'passwordlessemail@mockabase.com')!;
+    const existingPasswordlessSession = { data: { session: { id: existingPasswordlessUser.id, email: 'passwordlessemail@mockabase.com', phoneNumber: null, providerType: 'email-passwordless', oauthProvider: null } }, error: null };
+
+    // login without any OTP assigned → missingOTP
+    const loginWithoutOtp = await mockabaseClient.auth.signInWithEmailPasswordless({ email: 'passwordlessemail@mockabase.com' });
+    expect(loginWithoutOtp).toEqual({ data: null, error: mockabaseErrors.missingOTP });
+
+    // assign OTP "123456"
+    await mockabaseClient.auth.assignOtp({ providerType: 'email-passwordless', email: 'passwordlessemail@mockabase.com', staticOTP: '123456' });
+
+    // verify with incorrect OTP → invalidOTP
+    const wrongOtpResult = await mockabaseClient.auth.verifyOtp({ providerType: 'email-passwordless', email: 'passwordlessemail@mockabase.com', otp: '654321' });
+    expect(wrongOtpResult).toEqual({ data: null, error: mockabaseErrors.invalidOTP });
+
+    // assign new OTP "234567"
+    const assignOtpResult = await mockabaseClient.auth.assignOtp({ providerType: 'email-passwordless', email: 'passwordlessemail@mockabase.com', staticOTP: '234567' });
+    expect(assignOtpResult.error).toBeNull();
+
+    // login → success (uses OTP "234567" and clears it)
+    const loginResult = await mockabaseClient.auth.signInWithEmailPasswordless({ email: 'passwordlessemail@mockabase.com' });
+    expect(loginResult).toEqual(existingPasswordlessSession);
+
+    // OTP is cleared — login again returns missingOTP
+    const loginAfterOtpCleared = await mockabaseClient.auth.signInWithEmailPasswordless({ email: 'passwordlessemail@mockabase.com' });
+    expect(loginAfterOtpCleared).toEqual({ data: null, error: mockabaseErrors.missingOTP });
+
+    await mockabaseClient.auth.signOut();
+
+    // signing up existing passwordless email → userAlreadyExists
+    const signupExistingResult = await mockabaseClient.auth.signUpWithEmailPasswordless({ email: 'passwordlessemail@mockabase.com' });
+    expect(signupExistingResult).toEqual({ data: null, error: mockabaseErrors.userAlreadyExists });
+  });
+
+  test('new passwordless email user: signup succeeds, wrong OTP returns invalidOTP, login succeeds and OTP is cleared, deleting the user and attempting to log in returns userNotFound', async () => {
+    const newPasswordlessUserId = 'a1b2c3d4-e5f6-7890-abcd-fedcba098765';
+    const newPasswordlessEmail = 'newpasswordless@test.com';
+    const newPasswordlessSession = { data: { session: { id: newPasswordlessUserId, email: newPasswordlessEmail, phoneNumber: null, providerType: 'email-passwordless', oauthProvider: null } }, error: null };
+
+    // signup new passwordless email user with static OTP
+    const signupResult = await mockabaseClient.auth.signUpWithEmailPasswordless({ id: newPasswordlessUserId, email: newPasswordlessEmail, staticOTP: '123456' });
+    expect(signupResult).toEqual(newPasswordlessSession);
+
+    // verify with incorrect OTP → invalidOTP
+    const wrongOtpResult = await mockabaseClient.auth.verifyOtp({ providerType: 'email-passwordless', email: newPasswordlessEmail, otp: '654321' });
+    expect(wrongOtpResult).toEqual({ data: null, error: mockabaseErrors.invalidOTP });
+
+    // login → success (uses OTP "123456" and clears it)
+    const loginResult = await mockabaseClient.auth.signInWithEmailPasswordless({ email: newPasswordlessEmail });
+    expect(loginResult).toEqual(newPasswordlessSession);
+
+    // OTP is cleared — login again returns missingOTP
+    const loginWithoutOtp = await mockabaseClient.auth.signInWithEmailPasswordless({ email: newPasswordlessEmail });
+    expect(loginWithoutOtp).toEqual({ data: null, error: mockabaseErrors.missingOTP });
+
+    await mockabaseClient.auth.signOut();
+
+    // delete the new passwordless email user
+    const deletionResult = await testDeleteUser(newPasswordlessUserId);
+    expect(deletionResult).toEqual(emptySessionObject);
+
+    // login after deletion → userNotFound
+    const loginAfterDeletion = await mockabaseClient.auth.signInWithEmailPasswordless({ email: newPasswordlessEmail });
+    expect(loginAfterDeletion).toEqual({ data: null, error: mockabaseErrors.userNotFound });
+  });
+
+  // OAuth login
+
+  test('existing OAuth user: wrong provider returns badOAuthCallback, correct provider logs in successfully, signing up with an already-used email returns userAlreadyExists', async () => {
+    const existingOAuthUser = seedData.find(u => u.email === 'example@gmail.com')!;
+    const existingOAuthSession = { data: { session: { id: existingOAuthUser.id, email: 'example@gmail.com', phoneNumber: null, providerType: 'oauth', oauthProvider: 'google' } }, error: null };
+
+    // wrong provider → badOAuthCallback
+    const wrongProviderResult = await mockabaseClient.auth.signInWithOAuth({ email: 'example@gmail.com', provider: 'discord' });
+    expect(wrongProviderResult).toEqual({ data: null, error: mockabaseErrors.badOAuthCallback });
+
+    // correct provider → success
+    const loginResult = await mockabaseClient.auth.signInWithOAuth({ email: 'example@gmail.com', provider: 'google' });
+    expect(loginResult).toEqual(existingOAuthSession);
+
+    await mockabaseClient.auth.signOut();
+
+    // signup with already-used email → userAlreadyExists
+    const signupExistingResult = await mockabaseClient.auth.signUpWithOAuth({ email: 'example@gmail.com', provider: 'apple' });
+    expect(signupExistingResult).toEqual({ data: null, error: mockabaseErrors.userAlreadyExists });
+  });
+
+  test('new OAuth user: signup succeeds, wrong provider returns badOAuthCallback, correct provider logs in successfully, deleting the user and attempting to log in returns userNotFound', async () => {
+    const newOAuthEmail = 'example@apple.com';
+
+    // signup new OAuth user with "apple" provider
+    const signupResult = await mockabaseClient.auth.signUpWithOAuth({ email: newOAuthEmail, provider: 'apple' });
+    expect(signupResult.error).toBeNull();
+    expect(signupResult.data?.session.email).toBe(newOAuthEmail);
+    expect(signupResult.data?.session.oauthProvider).toBe('apple');
+    expect(signupResult.data?.session.providerType).toBe('oauth');
+
+    const newOAuthUserId = signupResult.data!.session.id;
+
+    // wrong provider → badOAuthCallback
+    const wrongProviderResult = await mockabaseClient.auth.signInWithOAuth({ email: newOAuthEmail, provider: 'facebook' });
+    expect(wrongProviderResult).toEqual({ data: null, error: mockabaseErrors.badOAuthCallback });
+
+    // correct provider → success
+    const loginResult = await mockabaseClient.auth.signInWithOAuth({ email: newOAuthEmail, provider: 'apple' });
+    expect(loginResult).toEqual(signupResult);
+
+    await mockabaseClient.auth.signOut();
+
+    // delete the new OAuth user
+    const deletionResult = await testDeleteUser(newOAuthUserId);
+    expect(deletionResult).toEqual(emptySessionObject);
+
+    // login after deletion → userNotFound
+    const loginAfterDeletion = await mockabaseClient.auth.signInWithOAuth({ email: newOAuthEmail, provider: 'apple' });
+    expect(loginAfterDeletion).toEqual({ data: null, error: mockabaseErrors.userNotFound });
+  });
 
   // re-seed the test users into the DB after the tests are finished
   afterAll(async () => {
