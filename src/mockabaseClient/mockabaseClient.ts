@@ -21,7 +21,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
       getUser: async function (): Promise<MockabaseUserReturnObject> {
         try {
           const response = await typedFetch<MockabaseUserReturnObject>({
-            url: `${mockabaseUrl}/get-current-session`,
+            url: `${mockabaseUrl}/session/get-current-session`,
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
@@ -35,7 +35,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
       },
       getSession: async function (): Promise<MockabaseUserReturnObject> {
         const response = await typedFetch<MockabaseUserReturnObject>({
-          url: `${mockabaseUrl}/get-current-session`,
+          url: `${mockabaseUrl}/session/get-current-session`,
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -47,7 +47,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
       signInWithPassword: async function (args: { email: string, password: string }) {
         try {
           const session = await typedFetch<MockabaseUserReturnObject>({
-            url: `${mockabaseUrl}/email-password-login`,
+            url: `${mockabaseUrl}/email-password/login`,
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -65,7 +65,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
         try {
           const response = await typedFetch<MockabaseUserReturnObject>({
-            url: `${mockabaseUrl}/email-password-signup`,
+            url: `${mockabaseUrl}/email-password/signup`,
             body: JSON.stringify({
               id,
               email,
@@ -85,7 +85,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
       updateUser: async function (args: { email: string, newPassword: string }) {
         try {
           const response = await typedFetch<MockabaseUserReturnObject>({
-            url: `${mockabaseUrl}/change-password`,
+            url: `${mockabaseUrl}/email-password/change-password`,
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -265,7 +265,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
       },
       signOut: async function () {
         const response = await typedFetch<MockabaseUserReturnObject>({
-          url: `${mockabaseUrl}/logout`,
+          url: `${mockabaseUrl}/session/logout`,
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

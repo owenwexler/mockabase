@@ -48,13 +48,14 @@ async function typedFetch<T>(args: TypedFetchArgs): Promise<T> {
     fetchObject['next'] = { revalidate: Number(nextRevalidateTime) }
   }
 
-  return fetch(finalUrl, fetchObject)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(response.statusText)
-      }
-      return response.json() as Promise<T>;
-    })
+  try {
+    const response = await fetch(finalUrl, fetchObject)
+    const result = await response.json();
+    return result as unknown as Promise<T>;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 }
 
 export {

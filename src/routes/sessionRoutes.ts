@@ -20,6 +20,7 @@ sessionRoutes.post('/logout', async (c) => {
 });
 
 sessionRoutes.get('/get-current-session', async (c) => {
+  console.log('POST /session/get-current-session');
   try {
     const session = getCurrentSession();
 
