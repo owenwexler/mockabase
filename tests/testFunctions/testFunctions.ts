@@ -1,6 +1,6 @@
 import { seedData } from "../../src/data/seedData";
 import { typedFetch } from "../../src/helper/typedFetch";
-import type { ReturnObject } from "../../src/typedefs/MockabaseUserReturnObject";
+import type { MockabaseUserReturnObject } from "../../src/typedefs/MockabaseUserReturnObject";
 
 import { testEnv } from "../testEnv/testEnv";
 
@@ -9,11 +9,11 @@ const { hostUrl } = testEnv;
 const seedIds = seedData.map(obj => obj.id);
 
 // setup function that clears the DB and then seeds it with the included seed data - this setup effectively also tests the /delete-multiple-users and /seed routes, so no separate tests are needed for these
-// the /delete-multiple-users route is used instead of the clear route so that only the seed data for testing is cleared and not any other created users
+// the /admin/delete-multiple-users route is used instead of the /admin/clear route so that only the seed data for testing is cleared and not any other created users
 const seedDB = async () => {
   try {
     const clearResult = await typedFetch({
-      url: `${hostUrl}/delete-multiple-users`,
+      url: `${hostUrl}/admin/delete-multiple-users`,
       body: JSON.stringify(seedIds),
       method: 'DELETE',
       headers: {
@@ -21,8 +21,8 @@ const seedDB = async () => {
       }
     });
 
-    const seedResult = await typedFetch<ReturnObject[]>({
-      url: `${hostUrl}/seed`,
+    const seedResult = await typedFetch<MockabaseUserReturnObject[]>({
+      url: `${hostUrl}/admin/seed`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -37,8 +37,8 @@ const seedDB = async () => {
 
 const testDeleteUser = async (userId: string) => {
   try {
-    const response = await typedFetch<ReturnObject>({
-      url: `${hostUrl}/delete-user/${userId}`,
+    const response = await typedFetch<MockabaseUserReturnObject>({
+      url: `${hostUrl}/admin/delete-user/${userId}`,
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'

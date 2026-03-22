@@ -53,6 +53,10 @@ const oauthLogin = async (args: OAuthArgs): Promise<MockabaseUserReturnObject> =
 
     const user = userResponse.data!;
 
+    if (user.oauthProvider !== oauthProvider) {
+      return await failure<UserSessionObject>(mockabaseErrors.badOAuthCallback, 'models/oauthLogin');
+    }
+
     return await success<UserSessionObject>({ session: { id: user.id, email: user.email!, phoneNumber: null, providerType: 'oauth', oauthProvider } });
   } catch (error) {
     return await failure<UserSessionObject>(error, 'models/oauthLogin');

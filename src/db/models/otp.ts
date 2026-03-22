@@ -13,7 +13,7 @@ import type { User } from "../../typedefs/User";
 const assignOtp = async (args: AssignOTPArgs): Promise<DataErrorReturnObject<'ok'>> => {
   const { providerType, email, phoneNumber } = args;
 
-  const otp = generateRandomOTP(6);
+  const otp = args.staticOTP ? args.staticOTP : generateRandomOTP(6);
 
   try {
     if (providerType === 'phone') {
@@ -50,7 +50,14 @@ const verifyOtp = async (args: VerifyOTPArgs): Promise<DataErrorReturnObject<'ok
 
     const user: User | undefined = response as unknown as User | undefined; // Type assertion for safety
 
+    if (!user) {
+      return await failure<'ok'>(mockabaseErrors.userNotFound, 'models/verifyOtp');
+    }
+
     if (user!.otp === otp) {
+      // clear the OTP once verified
+      await clearOtp(user!.id);
+
       return await success<'ok'>('ok');
     } else {
       return await failure<'ok'>(mockabaseErrors.invalidOTP, 'models/verifyOTP');

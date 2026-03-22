@@ -4,6 +4,7 @@ interface AssignOTPArgs {
   providerType: Provider;
   email?: string;
   phoneNumber?: string;
+  staticOTP?: string;
 }
 
 export type {

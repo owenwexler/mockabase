@@ -4,6 +4,7 @@ interface MockabaseErrorsObject extends ErrorsObject {
   invalidOTP: ErrorType;
   missingOTP: ErrorType;
   invalidPhoneNumber: ErrorType;
+  [key: string]: ErrorType;
 }
 
 export const mockabaseErrors: MockabaseErrorsObject = {

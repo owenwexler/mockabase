@@ -86,13 +86,7 @@ describe('Core functions', () => {
     expect(response).toEqual(userAlreadyExistsErrorObject);
   });
 
-  test('mock OAuth login returns the proper response', async () => {
-    const session = await mockabaseClient.auth.signInWithOAuth({ provider: 'google' });
-    expect(session.data!.user.email).toEqual(mockOAuthEmail);
-    await mockabaseClient.auth.signOut();
-  });
-
-  test('a new test user can be signed up successfully and a logged-in session returns the new user', async () => {
+  test('a new test user can be signed up successfully and a logged-in session by email returns the new user', async () => {
     const signupResult = await mockabaseClient.auth.signUpWithPassword(newTestUser);
     expect(signupResult).toEqual({
       data: { user: { id: newTestUser.id, email: newTestUser.email } },
@@ -141,8 +135,37 @@ describe('Core functions', () => {
     expect(deletedUserSession).toEqual(nonexistentUserErrorObject);
   });
 
+  /*
+  NEW TESTS (put all of these new tests before the afterAll hook):
+  - Phone login (always to be gated by an OTP verification):
+  * when using assignOtp or any signup function, use the optional { staticOTP } argument to assign a static non-random OTP to the new user for testability
+    - trying to log in an existing phone user (use "+13011234567", which is seeded into the DB at the beginning of the test run with the OTP "123456") without a verified OTP first returns the correct error (mockabaseErrors.missingOTP)
+    - trying to verify OTP on an an existing phone user with an incorrect OTP ("654321") returns the correct error (mockabaseErrors.invalidOTP)
+    - a new OTP (staticOTP: "234567") can be assigned to an existing phone number
+    - verification with the new OTP ("234567") on the new phone number is successful and the phone number user can be logged in successfully
+    - once logged in, the OTP is cleared from the user (check this with showOtp function in Mockabase client)
+    - log out existing user
+    - attempting to sign up an already existing phone number user returns the proper error (mockabaseErrors.userAlreadyExists)
+    - a new phone number user ("+6312345678910") can be signed up with a static OTP ("123456")
+    - trying to log in the new user without an OTP returns the correct error (mockabaseErrors.missingOTP)
+    - trying to verify OTP on the new user with an incorrect OTP returns the proper error (mockabaseErrors.invalidOTP)
+
+  - Passwordless e-mail signup/login:
+    - please write a similar suite of tests as the above phone login/signup tests but for passwordless e-mail signups, which work in an almost identical manner in Mockabase
+
+  - OAuth login
+    - Trying to login an existing OAuth user (example@gmail.com) with the wrong provider ("discord") returns the correct error (mockabaseErrors.badOAuthCallback)
+    - Logging in an existing OAuth user with the proper provider ("google") is successful, log out the OAuth user after verifying a successful session
+    - attempting to sign up a new OAuth user with an already-used e-mail address returns the proper error (mockabaseErrors.userAlreadyExists)
+    - A new OAuth user ("example@apple.com") can be signed up with the "apple" oauth provider
+    - Logging in the new OAuth user with the wrong provider ("facebook") returns the correct error message (mockabaseErrors.badOAuthCallback)
+    - Logging in the new OAuth user with the proper provider is successful, log out the OAuth user after verifying a successful session
+  */
+
   // re-seed the test users into the DB after the tests are finished
   afterAll(async () => {
     await seedDB();
   })
 });
+
+

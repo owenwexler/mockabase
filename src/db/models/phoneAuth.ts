@@ -56,19 +56,20 @@ const phoneLogin = async (args: GenericUserPhoneArgs): Promise<MockabaseUserRetu
   try {
     const userResponse = await getUserByPhone(phoneNumber);
 
-    if (userResponse.error && userResponse.error.code == 'user_not_found') {
+    if (userResponse.error) {
+      return await failure<UserSessionObject>(userResponse.error, 'models/phone/phoneLogin');
+    }
+
+    if (!userResponse.data) {
       return await failure<UserSessionObject>(mockabaseErrors.userNotFound, 'models/phone/phoneLogin');
     }
 
     const user = userResponse.data!;
 
-    // return an error if this is attempted with no OTP
-    if (!user.otp) {
+    // return an error if this login is attempted while the user has an active unverified OTP
+    if (user.otp) {
       return await failure<UserSessionObject>(mockabaseErrors.missingOTP, 'models/phoneAuth/phoneLogin');
     }
-
-    // clear the OTP once successfully logged in
-    await clearOtp(user.id);
 
     return await success<UserSessionObject>({ session: { id: user.id, email: null, phoneNumber: user.phoneNumber!, providerType: 'phone', oauthProvider: null } });
   } catch (error) {
