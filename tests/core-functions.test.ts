@@ -145,16 +145,13 @@ describe('Core functions', () => {
 
   // Phone login (gated by OTP verification)
 
-  test('existing phone user: login returns missingOTP when OTP is unverified, wrong OTP returns invalidOTP, new OTP can be assigned, verification succeeds and login succeeds, OTP is cleared after login, signing up an existing phone number returns userAlreadyExists', async () => {
+  test('existing phone user: login returns invalidOTP when OTP is unverified, wrong OTP returns invalidOTP, new OTP can be assigned, verification succeeds and login succeeds, OTP is cleared and then a random OTP is reassigned after login blocking any subsequent login attempts, signing up an existing phone number returns userAlreadyExists', async () => {
     const existingPhoneUser = seedData.find(user => user.phoneNumber === '+13011234567')!;
     const existingPhoneSession = { data: { session: { id: existingPhoneUser.id, email: null, phoneNumber: '+13011234567', providerType: 'phone', oauthProvider: null } }, error: null };
 
-    // assign OTP "123456" to the seeded phone user
-    await mockabaseClient.auth.assignOtp({ providerType: 'phone', phoneNumber: '+13011234567', staticOTP: '123456' });
-
-    // login without verified OTP → missingOTP
+    // login without verified OTP → invalidOTP
     const loginWithoutOtp = await mockabaseClient.auth.signInWithPhone({ phoneNumber: '+13011234567' });
-    expect(loginWithoutOtp).toEqual({ data: null, error: mockabaseErrors.missingOTP });
+    expect(loginWithoutOtp).toEqual({ data: null, error: mockabaseErrors.invalidOTP });
 
     // verify with incorrect OTP → invalidOTP
     const wrongOtpResult = await mockabaseClient.auth.verifyOtp({ providerType: 'phone', phoneNumber: '+13011234567', otp: '654321' });
@@ -162,11 +159,7 @@ describe('Core functions', () => {
 
     // assign new OTP "234567"
     const assignOtpResult = await mockabaseClient.auth.assignOtp({ providerType: 'phone', phoneNumber: '+13011234567', staticOTP: '234567' });
-    console.log('assignOtpResult in phone test: ', assignOtpResult)
     expect(assignOtpResult.error).toBeNull();
-
-    const testShowOtp = await mockabaseClient.auth.showOtp({ userIdentifier: '+13011234567', providerType: 'phone' });
-    console.log('testShowOtp: ', testShowOtp)
 
     // verify with "234567" → success
     const verifyResult = await mockabaseClient.auth.verifyOtp({ providerType: 'phone', phoneNumber: '+13011234567', otp: '234567' });
@@ -176,11 +169,11 @@ describe('Core functions', () => {
     const loginResult = await mockabaseClient.auth.signInWithPhone({ phoneNumber: '+13011234567' });
     expect(loginResult).toEqual(existingPhoneSession);
 
-    // OTP is cleared — showOtp returns missingOTP
-    const showOtpResult = await mockabaseClient.auth.showOtp({ userIdentifier: '+13011234567', providerType: 'phone' });
-    expect(showOtpResult).toEqual({ data: null, error: mockabaseErrors.missingOTP });
-
     await mockabaseClient.auth.signOut();
+
+    // with new OTP assigned, subsequent attempt to login returns invalidOTP
+    const secondLoginResult = await mockabaseClient.auth.signInWithPhone({ phoneNumber: '+13011234567' });
+    expect(secondLoginResult).toEqual({ data: null, error: mockabaseErrors.invalidOTP });
 
     // signing up existing phone number → userAlreadyExists
     const signupExistingResult = await mockabaseClient.auth.signUpWithPhone({ phoneNumber: '+13011234567' });
@@ -198,7 +191,7 @@ describe('Core functions', () => {
 
     // login without verified OTP → missingOTP
     const loginWithoutOtp = await mockabaseClient.auth.signInWithPhone({ phoneNumber: newPhoneNumber });
-    expect(loginWithoutOtp).toEqual({ data: null, error: mockabaseErrors.missingOTP });
+    expect(loginWithoutOtp).toEqual({ data: null, error: mockabaseErrors.invalidOTP });
 
     // verify with incorrect OTP → invalidOTP
     const wrongOtpResult = await mockabaseClient.auth.verifyOtp({ providerType: 'phone', phoneNumber: newPhoneNumber, otp: '654321' });
@@ -215,13 +208,13 @@ describe('Core functions', () => {
 
   // Passwordless e-mail signup/login
 
-  test('existing passwordless email user: login returns missingOTP when no OTP is assigned, wrong OTP returns invalidOTP, new OTP can be assigned, login succeeds and OTP is cleared, signing up an existing passwordless email returns userAlreadyExists', async () => {
+  test('existing passwordless email user: attempted login with OTP assigned returns invalid OTP, wrong OTP returns invalidOTP, new OTP can be assigned, login succeeds and OTP is cleared and then a random OTP is reassigned blocking any subsequent login attempts without OTP, signing up an existing passwordless email returns userAlreadyExists', async () => {
     const existingPasswordlessUser = seedData.find(user => user.email === 'passwordlessemail@mockabase.com')!;
     const existingPasswordlessSession = { data: { session: { id: existingPasswordlessUser.id, email: 'passwordlessemail@mockabase.com', phoneNumber: null, providerType: 'email-passwordless', oauthProvider: null } }, error: null };
 
-    // login without any OTP assigned → missingOTP
+    // attempt login with an active unverified OTP still attached to the user → invalidOTP
     const loginWithoutOtp = await mockabaseClient.auth.signInWithEmailPasswordless({ email: 'passwordlessemail@mockabase.com' });
-    expect(loginWithoutOtp).toEqual({ data: null, error: mockabaseErrors.missingOTP });
+    expect(loginWithoutOtp).toEqual({ data: null, error: mockabaseErrors.invalidOTP });
 
     // assign OTP "123456"
     const assignOtpResult123456 = await mockabaseClient.auth.assignOtp({ providerType: 'email-passwordless', email: 'passwordlessemail@mockabase.com', staticOTP: '123456' });
@@ -236,15 +229,18 @@ describe('Core functions', () => {
     const assignOtpResult = await mockabaseClient.auth.assignOtp({ providerType: 'email-passwordless', email: 'passwordlessemail@mockabase.com', staticOTP: '234567' });
     expect(assignOtpResult.error).toBeNull();
 
+    const verifyOtpResult = await mockabaseClient.auth.verifyOtp({ providerType: 'email-passwordless', email: 'passwordlessemail@mockabase.com', otp: '234567' })
+    expect(verifyOtpResult.error).toBeNull();
+
     // login → success (uses OTP "234567" and clears it)
     const loginResult = await mockabaseClient.auth.signInWithEmailPasswordless({ email: 'passwordlessemail@mockabase.com' });
     expect(loginResult).toEqual(existingPasswordlessSession);
 
     await mockabaseClient.auth.signOut();
 
-    // OTP is cleared — login again returns missingOTP
+    // re-assigned OTP — login again returns invalidOTP
     const loginAfterOtpCleared = await mockabaseClient.auth.signInWithEmailPasswordless({ email: 'passwordlessemail@mockabase.com' });
-    expect(loginAfterOtpCleared).toEqual({ data: null, error: mockabaseErrors.missingOTP });
+    expect(loginAfterOtpCleared).toEqual({ data: null, error: mockabaseErrors.invalidOTP });
 
     await mockabaseClient.auth.signOut();
 
@@ -267,8 +263,8 @@ describe('Core functions', () => {
     expect(wrongOtpResult).toEqual({ data: null, error: mockabaseErrors.invalidOTP });
 
     // verify with correct OTP → success
-    const correctOtpResult = await mockabaseClient.auth.verifyOtp({ providerType: 'email-passwordless', email: newPasswordlessEmail, otp: '123456' });
-    expect(correctOtpResult).toEqual(newPasswordlessSession);
+    const verifyResult = await mockabaseClient.auth.verifyOtp({ providerType: 'email-passwordless', email: newPasswordlessEmail, otp: '123456' });
+    expect(verifyResult).toEqual({ data: 'ok', error: null });
 
     // login after OTP is verified → success
     const loginResult = await mockabaseClient.auth.signInWithEmailPasswordless({ email: newPasswordlessEmail });
@@ -276,9 +272,9 @@ describe('Core functions', () => {
 
     await mockabaseClient.auth.signOut();
 
-    // OTP is cleared — login again returns missingOTP
+    // OTP is reassigned — login again returns invalidOTP
     const loginWithoutOtp = await mockabaseClient.auth.signInWithEmailPasswordless({ email: newPasswordlessEmail });
-    expect(loginWithoutOtp).toEqual({ data: null, error: mockabaseErrors.missingOTP });
+    expect(loginWithoutOtp).toEqual({ data: null, error: mockabaseErrors.invalidOTP });
 
     await mockabaseClient.auth.signOut();
 

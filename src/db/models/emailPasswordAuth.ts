@@ -94,6 +94,7 @@ const getUserByEmail = async (email: string): Promise<DataErrorReturnObject<User
       encryptedPassword: users.encryptedPassword,
       otp: users.otp,
     }).from(users).where(eq(users.email, email)).all();
+
     const user: User | undefined = result[0] as User | undefined;
 
     if (!user || user.id === '') {

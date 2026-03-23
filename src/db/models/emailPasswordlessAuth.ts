@@ -9,7 +9,7 @@ import { toPostgresTimestampUTC } from "../../helper/timestampFunctions";
 import db from "../db";
 import { users } from "../schema.js";
 import { blankSession } from "../../data/blankObjects";
-import { clearOtp } from "./otp";
+import { assignOtp, clearOtp } from "./otp";
 import type { EmailPasswordlessSignupArgs } from "../../typedefs/EmailPasswordlessSignupArgs";
 
 const emailPasswordlessSignup = async (args: EmailPasswordlessSignupArgs
@@ -52,12 +52,12 @@ const emailPasswordlessLogin = async (args: EmailPasswordlessSignupArgs): Promis
 
     const user = userResponse.data!;
 
-    if (!user.otp) {
-      return await failure<UserSessionObject>(mockabaseErrors.missingOTP, 'models/emailPasswordlessAuth/emailPasswordlessLogin');
+    if (user.otp) {
+      return await failure<UserSessionObject>(mockabaseErrors.invalidOTP, 'models/emailPasswordlessAuth/emailPasswordlessLogin');
     }
 
-    // clear the OTP once successfully logged in
-    await clearOtp(user.id);
+    // assign a new random OTP to block login without OTP next time
+    await assignOtp({ providerType: 'email-passwordless', email });
 
     return await success<UserSessionObject>({ session: { id: user.id, email: user.email!, phoneNumber: null, providerType: 'email-passwordless', oauthProvider: null } });
   } catch (error) {

@@ -13,6 +13,7 @@ import type { User } from "../../typedefs/User";
 import type { MockabaseUserReturnObject } from "../../typedefs/MockabaseUserReturnObject";
 import { generateRandomOTP } from "../../helper/generateRandomOTP";
 import type { PhoneSignupArgs } from "../../typedefs/PhoneSignupArgs";
+import { assignOtp } from "./otp";
 
 const phoneSignup = async (args: PhoneSignupArgs) => {
   const { phoneNumber } = args;
@@ -68,8 +69,11 @@ const phoneLogin = async (args: GenericUserPhoneArgs): Promise<MockabaseUserRetu
 
     // return an error if this login is attempted while the user has an active unverified OTP
     if (user.otp) {
-      return await failure<UserSessionObject>(mockabaseErrors.missingOTP, 'models/phoneAuth/phoneLogin');
+      return await failure<UserSessionObject>(mockabaseErrors.invalidOTP, 'models/phoneAuth/phoneLogin');
     }
+
+    // assign a new random OTP to block login without OTP next time
+    await assignOtp({ providerType: 'phone', phoneNumber });
 
     return await success<UserSessionObject>({ session: { id: user.id, email: null, phoneNumber: user.phoneNumber!, providerType: 'phone', oauthProvider: null } });
   } catch (error) {
