@@ -7,6 +7,8 @@ import type { UserSessionObject } from '../../typedefs/UserSessionObject';
 import { toPostgresTimestampUTC } from '../../helper/timestampFunctions';
 import { mockabaseErrors } from "../../data/mockabaseErrors";
 import db from "../db";
+import { users } from "../schema.js";
+import { eq } from "drizzle-orm";
 import { blankSession } from "../../data/blankObjects";
 import type { User } from "../../typedefs/User";
 
@@ -36,8 +38,7 @@ const emailPasswordSignup = async (args: SignupArgs): Promise<MockabaseUserRetur
     const createdAt = toPostgresTimestampUTC(new Date());
     const updatedAt = toPostgresTimestampUTC(new Date());
 
-    const query = db.prepare('INSERT INTO users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) RETURNING id, email, phone_number AS "phoneNumber", oauth_provider AS "oauthProvider";');
-    const result = query.run(id, email, encryptedPassword, emailConfirmedAt, createdAt, updatedAt);
+    const result = db.insert(users).values({ id, email, encryptedPassword, emailConfirmedAt, createdAt, updatedAt }).run();
 
     const data: UserSessionObject = result ? { session: { id, email, phoneNumber: null, providerType: 'email-password', oauthProvider: null } } : { session: blankSession };
     return await success<UserSessionObject>(data);
@@ -74,11 +75,8 @@ const changeUserPassword = async (email: string, newPassword: string): Promise<D
   try {
     const encryptedNewPassword = await hash(newPassword);
     const updatedAt = toPostgresTimestampUTC(new Date());
-    const encryptedPasswordQuery = db.prepare('UPDATE users SET encrypted_password = ? WHERE email = ?;');
-    const encryptedPasswordResult = encryptedPasswordQuery.run(encryptedNewPassword, email);
 
-    const updatedAtQuery = db.prepare('UPDATE users SET updated_at = ? WHERE email = ?');
-    const updatedAtResult = updatedAtQuery.run(updatedAt, email);
+    db.update(users).set({ encryptedPassword: encryptedNewPassword, updatedAt }).where(eq(users.email, email)).run();
 
     return await success<null>(null);
   } catch (error) {
@@ -88,9 +86,15 @@ const changeUserPassword = async (email: string, newPassword: string): Promise<D
 
 const getUserByEmail = async (email: string): Promise<DataErrorReturnObject<User>> => {
   try {
-    const query = db.prepare('SELECT id, email, phone_number AS "phoneNumber", provider_type AS "providerType", encrypted_password AS "encryptedPassword", otp FROM users WHERE email = ?');
-    const result = query.get(email);
-    const user: User | undefined = result as User | undefined; // Type assertion for safety
+    const result = db.select({
+      id: users.id,
+      email: users.email,
+      phoneNumber: users.phoneNumber,
+      providerType: users.providerType,
+      encryptedPassword: users.encryptedPassword,
+      otp: users.otp,
+    }).from(users).where(eq(users.email, email)).all();
+    const user: User | undefined = result[0] as User | undefined;
 
     if (!user || user.id === '') {
       return await failure<User>(mockabaseErrors.userNotFound, 'models/emailPasswordAuth/getUserByEmail');
@@ -104,12 +108,9 @@ const getUserByEmail = async (email: string): Promise<DataErrorReturnObject<User
 
 const checkUserExistsByEmail = async (email: string): Promise<boolean> => {
   try {
-    const query = db.prepare('SELECT DISTINCT email FROM users WHERE email = ?;');
+    const result = db.select({ email: users.email }).from(users).where(eq(users.email, email)).all();
 
-    const result = query.get(email);
-    const user: User | undefined = result as User | undefined;
-
-    return user !== undefined;
+    return result.length > 0;
   } catch (error) {
     console.error(error);
     return false;

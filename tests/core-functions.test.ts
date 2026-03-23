@@ -146,7 +146,7 @@ describe('Core functions', () => {
   // Phone login (gated by OTP verification)
 
   test('existing phone user: login returns missingOTP when OTP is unverified, wrong OTP returns invalidOTP, new OTP can be assigned, verification succeeds and login succeeds, OTP is cleared after login, signing up an existing phone number returns userAlreadyExists', async () => {
-    const existingPhoneUser = seedData.find(u => u.phoneNumber === '+13011234567')!;
+    const existingPhoneUser = seedData.find(user => user.phoneNumber === '+13011234567')!;
     const existingPhoneSession = { data: { session: { id: existingPhoneUser.id, email: null, phoneNumber: '+13011234567', providerType: 'phone', oauthProvider: null } }, error: null };
 
     // assign OTP "123456" to the seeded phone user
@@ -162,7 +162,11 @@ describe('Core functions', () => {
 
     // assign new OTP "234567"
     const assignOtpResult = await mockabaseClient.auth.assignOtp({ providerType: 'phone', phoneNumber: '+13011234567', staticOTP: '234567' });
+    console.log('assignOtpResult in phone test: ', assignOtpResult)
     expect(assignOtpResult.error).toBeNull();
+
+    const testShowOtp = await mockabaseClient.auth.showOtp({ userIdentifier: '+13011234567', providerType: 'phone' });
+    console.log('testShowOtp: ', testShowOtp)
 
     // verify with "234567" → success
     const verifyResult = await mockabaseClient.auth.verifyOtp({ providerType: 'phone', phoneNumber: '+13011234567', otp: '234567' });
@@ -185,7 +189,7 @@ describe('Core functions', () => {
 
   test('new phone user: signup succeeds, login returns missingOTP before OTP is verified, wrong OTP returns invalidOTP, deleting the user and attempting to log in returns userNotFound', async () => {
     const newPhoneUserId = 'f1a2b3c4-d5e6-7890-abcd-ef1234567890';
-    const newPhoneNumber = '+6312345678910';
+    const newPhoneNumber = '+6312345678910'; // this is a Philippine phone number, effectively also testing international phone number signup
     const newPhoneSession = { data: { session: { id: newPhoneUserId, email: null, phoneNumber: newPhoneNumber, providerType: 'phone', oauthProvider: null } }, error: null };
 
     // signup new phone user with static OTP
@@ -212,7 +216,7 @@ describe('Core functions', () => {
   // Passwordless e-mail signup/login
 
   test('existing passwordless email user: login returns missingOTP when no OTP is assigned, wrong OTP returns invalidOTP, new OTP can be assigned, login succeeds and OTP is cleared, signing up an existing passwordless email returns userAlreadyExists', async () => {
-    const existingPasswordlessUser = seedData.find(u => u.email === 'passwordlessemail@mockabase.com')!;
+    const existingPasswordlessUser = seedData.find(user => user.email === 'passwordlessemail@mockabase.com')!;
     const existingPasswordlessSession = { data: { session: { id: existingPasswordlessUser.id, email: 'passwordlessemail@mockabase.com', phoneNumber: null, providerType: 'email-passwordless', oauthProvider: null } }, error: null };
 
     // login without any OTP assigned → missingOTP
@@ -220,7 +224,9 @@ describe('Core functions', () => {
     expect(loginWithoutOtp).toEqual({ data: null, error: mockabaseErrors.missingOTP });
 
     // assign OTP "123456"
-    await mockabaseClient.auth.assignOtp({ providerType: 'email-passwordless', email: 'passwordlessemail@mockabase.com', staticOTP: '123456' });
+    const assignOtpResult123456 = await mockabaseClient.auth.assignOtp({ providerType: 'email-passwordless', email: 'passwordlessemail@mockabase.com', staticOTP: '123456' });
+    console.log(assignOtpResult123456);
+    expect(assignOtpResult123456).toEqual({ data: 'ok', error: null });
 
     // verify with incorrect OTP → invalidOTP
     const wrongOtpResult = await mockabaseClient.auth.verifyOtp({ providerType: 'email-passwordless', email: 'passwordlessemail@mockabase.com', otp: '654321' });
@@ -233,6 +239,8 @@ describe('Core functions', () => {
     // login → success (uses OTP "234567" and clears it)
     const loginResult = await mockabaseClient.auth.signInWithEmailPasswordless({ email: 'passwordlessemail@mockabase.com' });
     expect(loginResult).toEqual(existingPasswordlessSession);
+
+    await mockabaseClient.auth.signOut();
 
     // OTP is cleared — login again returns missingOTP
     const loginAfterOtpCleared = await mockabaseClient.auth.signInWithEmailPasswordless({ email: 'passwordlessemail@mockabase.com' });
@@ -258,9 +266,15 @@ describe('Core functions', () => {
     const wrongOtpResult = await mockabaseClient.auth.verifyOtp({ providerType: 'email-passwordless', email: newPasswordlessEmail, otp: '654321' });
     expect(wrongOtpResult).toEqual({ data: null, error: mockabaseErrors.invalidOTP });
 
-    // login → success (uses OTP "123456" and clears it)
+    // verify with correct OTP → success
+    const correctOtpResult = await mockabaseClient.auth.verifyOtp({ providerType: 'email-passwordless', email: newPasswordlessEmail, otp: '123456' });
+    expect(correctOtpResult).toEqual(newPasswordlessSession);
+
+    // login after OTP is verified → success
     const loginResult = await mockabaseClient.auth.signInWithEmailPasswordless({ email: newPasswordlessEmail });
     expect(loginResult).toEqual(newPasswordlessSession);
+
+    await mockabaseClient.auth.signOut();
 
     // OTP is cleared — login again returns missingOTP
     const loginWithoutOtp = await mockabaseClient.auth.signInWithEmailPasswordless({ email: newPasswordlessEmail });
@@ -278,9 +292,8 @@ describe('Core functions', () => {
   });
 
   // OAuth login
-
   test('existing OAuth user: wrong provider returns badOAuthCallback, correct provider logs in successfully, signing up with an already-used email returns userAlreadyExists', async () => {
-    const existingOAuthUser = seedData.find(u => u.email === 'example@gmail.com')!;
+    const existingOAuthUser = seedData.find(user => user.email === 'example@gmail.com')!;
     const existingOAuthSession = { data: { session: { id: existingOAuthUser.id, email: 'example@gmail.com', phoneNumber: null, providerType: 'oauth', oauthProvider: 'google' } }, error: null };
 
     // wrong provider → badOAuthCallback

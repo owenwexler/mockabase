@@ -54,7 +54,7 @@ oauthRoutes.post('/login/:provider', async (c) => {
   try {
     const result = await oauthLogin({ email, oauthProvider });
 
-    if (result.error && result.error.code === mockabaseErrors.userNotFound.code) {
+    if (result.error) {
       const result = await failure<MockabaseUserReturnObject>(mockabaseErrors.userNotFound, '/oauth/login');
       return c.json(result);
     }

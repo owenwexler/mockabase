@@ -6,6 +6,7 @@ import type { UserSessionObject } from "../../typedefs/UserSessionObject";
 import { mockabaseErrors } from "../../data/mockabaseErrors";
 import { toPostgresTimestampUTC } from "../../helper/timestampFunctions";
 import db from "../db";
+import { users } from "../schema.js";
 import { blankSession } from "../../data/blankObjects";
 import type { OAuthProvider } from "../../typedefs/OAuthProvider";
 
@@ -31,8 +32,7 @@ const oauthSignup = async (args: OAuthArgs): Promise<MockabaseUserReturnObject> 
     const createdAt = toPostgresTimestampUTC(new Date());
     const updatedAt = toPostgresTimestampUTC(new Date());
 
-    const query = db.prepare('INSERT INTO users (id, email, oauth_provider, provider_type, email_confirmed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, email, phone_number AS "phoneNumber", oauth_provider AS "oauthProvider";');
-    const result = query.run(id, email, oauthProvider, 'oauth', emailConfirmedAt, createdAt, updatedAt);
+    const result = db.insert(users).values({ id, email, oauthProvider, providerType: 'oauth', emailConfirmedAt, createdAt, updatedAt }).run();
 
     const data: UserSessionObject = result ? { session: { id, email, phoneNumber: null, providerType: 'oauth', oauthProvider } } : { session: blankSession };
     return await success<UserSessionObject>(data);

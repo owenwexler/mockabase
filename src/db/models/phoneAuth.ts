@@ -7,6 +7,8 @@ import type { UserSessionObject } from "../../typedefs/UserSessionObject";
 import { mockabaseErrors } from "../../data/mockabaseErrors";
 import { blankSession } from "../../data/blankObjects";
 import db from "../db";
+import { users } from "../schema.js";
+import { eq } from "drizzle-orm";
 import type { User } from "../../typedefs/User";
 import type { MockabaseUserReturnObject } from "../../typedefs/MockabaseUserReturnObject";
 import { generateRandomOTP } from "../../helper/generateRandomOTP";
@@ -34,8 +36,7 @@ const phoneSignup = async (args: PhoneSignupArgs) => {
   const otp = args.staticOTP ? args.staticOTP : generateRandomOTP(6);
 
   try {
-    const query = db.prepare('INSERT INTO users (id, phone_number, otp, created_at, updated_at) VALUES (?, ?, ?, ?, ?) RETURNING id, email, phone_number AS "phoneNumber", oauth_provider AS "oauthProvider";');
-    const result = query.run(id, phoneNumber, otp, createdAt, updatedAt);
+    const result = db.insert(users).values({ id, phoneNumber, otp, createdAt, updatedAt }).run();
 
     const data: UserSessionObject = result ? { session: { id, email: null, phoneNumber, providerType: 'phone', oauthProvider: null } } : { session: blankSession };
     return await success<UserSessionObject>(data);
@@ -78,9 +79,15 @@ const phoneLogin = async (args: GenericUserPhoneArgs): Promise<MockabaseUserRetu
 
 const getUserByPhone = async (phoneNumber: string): Promise<DataErrorReturnObject<User>> => {
   try {
-    const query = db.prepare('SELECT id, email, phone_number AS "phoneNumber", provider_type AS "providerType", encrypted_password AS "encryptedPassword", otp FROM users WHERE phone_number = ?');
-    const result = query.get(phoneNumber);
-    const user: User | undefined = result as User | undefined; // Type assertion for safety
+    const result = db.select({
+      id: users.id,
+      email: users.email,
+      phoneNumber: users.phoneNumber,
+      providerType: users.providerType,
+      encryptedPassword: users.encryptedPassword,
+      otp: users.otp,
+    }).from(users).where(eq(users.phoneNumber, phoneNumber)).all();
+    const user: User | undefined = result[0] as User | undefined;
 
     if (!user || user.id === '') {
       return await failure<User>(mockabaseErrors.userNotFound, 'models/phoneAuth/getUserByPhone');
@@ -94,12 +101,9 @@ const getUserByPhone = async (phoneNumber: string): Promise<DataErrorReturnObjec
 
 const checkUserExistsByPhone = async (phoneNumber: string): Promise<boolean> => {
   try {
-    const query = db.prepare('SELECT DISTINCT phone_number FROM users WHERE phone_number = ?;');
+    const result = db.select({ phoneNumber: users.phoneNumber }).from(users).where(eq(users.phoneNumber, phoneNumber)).all();
 
-    const result = query.get(phoneNumber);
-    const user: User | undefined = result as User | undefined;
-
-    return user !== undefined;
+    return result.length > 0;
   } catch (error) {
     console.error(error);
     return false;

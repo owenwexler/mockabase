@@ -7,6 +7,7 @@ import { mockabaseErrors } from "../../data/mockabaseErrors";
 import { generateRandomOTP } from "../../helper/generateRandomOTP";
 import { toPostgresTimestampUTC } from "../../helper/timestampFunctions";
 import db from "../db";
+import { users } from "../schema.js";
 import { blankSession } from "../../data/blankObjects";
 import { clearOtp } from "./otp";
 import type { EmailPasswordlessSignupArgs } from "../../typedefs/EmailPasswordlessSignupArgs";
@@ -30,8 +31,7 @@ const emailPasswordlessSignup = async (args: EmailPasswordlessSignupArgs
   }
 
   try {
-    const query = db.prepare('INSERT INTO users (id, email, otp, email_confirmed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) RETURNING id, email, phone_number AS "phoneNumber", oauth_provider AS "oauthProvider";');
-    const result = query.run(id, email, otp, emailConfirmedAt, createdAt, updatedAt);
+    const result = db.insert(users).values({ id, email, otp, emailConfirmedAt, createdAt, updatedAt }).run();
 
     const data: UserSessionObject = result ? { session: { id, email, phoneNumber: null, providerType: 'email-passwordless', oauthProvider: null } } : { session: blankSession };
     return await success<UserSessionObject>(data);

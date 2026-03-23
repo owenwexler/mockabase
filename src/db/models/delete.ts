@@ -1,12 +1,12 @@
 import db from '../db';
+import { users } from '../schema.js';
+import { eq, inArray } from 'drizzle-orm';
 import { failure, success, type DataErrorReturnObject } from 'dataerror';
 import { mockabaseErrors } from '../../data/mockabaseErrors';
 
 const deleteUser = async (id: string): Promise<DataErrorReturnObject<null>> => {
   try {
-    const query = db.prepare('DELETE FROM users WHERE id = ?;');
-
-    const result = query.run(id);
+    db.delete(users).where(eq(users.id, id)).run();
 
     return await success<null>(null);
   } catch (error) {
@@ -37,17 +37,12 @@ const deleteMultipleUsers = async (ids: string[]): Promise<DataErrorReturnObject
     let totalDeleted = 0;
 
     // Wrap all batched statements in a single transaction
-    const runTxn = db.transaction(() => {
+    db.transaction((tx) => {
       for (const chunk of chunks) {
-        const placeholders = chunk.map(() => '?').join(',');
-        const sql = `DELETE FROM users WHERE id IN (${placeholders});`;
-        const stmt = db.prepare(sql);
-        const info = stmt.run(...chunk);
-        totalDeleted += info.changes ?? 0;
+        const deleted = tx.delete(users).where(inArray(users.id, chunk)).returning({ id: users.id }).all();
+        totalDeleted += deleted.length;
       }
     });
-
-    runTxn(); // execute the transaction
 
     return await success<DeletedCount>({ deleted: totalDeleted });
   } catch (error) {
@@ -57,9 +52,7 @@ const deleteMultipleUsers = async (ids: string[]): Promise<DataErrorReturnObject
 
 const deleteAllUsers = async (): Promise<DataErrorReturnObject<null>> => {
   try {
-    const query = db.prepare('DELETE FROM users');
-
-    const result = query.run();
+    db.delete(users).run();
 
     return await success<null>(null);
   } catch (error) {
