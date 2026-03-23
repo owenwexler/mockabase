@@ -13,19 +13,24 @@ I simply wrote this to solve a problem I had with testing Supabase auth in my ap
 This is not a commercial project and I'm not making money from it.  The name Supabase belongs to its creators.
 
 # How does Mockabase work?
-Mockabase uses an embedded SQLite database (in a file called mockabase.sqlite) with a users table that loosely mocks the ```auth.users``` table in Supabase.  There are various routes for all expected user functions (including a mock "OAuth" login and signup) detailed in the routes section below.  "Sessions" are currently handled with a JSON file at the root of the project called ```session.json```, which is either null if logged out or has the id and e-mail of the current user if logged in.  I consider this an acceptable minimal way to mock sessions for testing and development purposes.
+Mockabase uses an embedded SQLite database (in a file called mockabase.sqlite) with a users table that loosely mocks the ```auth.users``` table in Supabase.  There are various routes for all expected user functions detailed in the routes section below.  "Sessions" are currently handled with a JSON file at the root of the project called ```session.json```, which is either null if logged out or has the id and e-mail of the current user if logged in.  I consider this an acceptable minimal way to mock sessions for testing and development purposes.
 
 ## Why SQLite and not PostgreSQL?
 Although Supabase uses Postgres under the hood, as of September 2025, Mockabase uses an embedded SQLite database for simplicity and portability.  When Mockabase was using PostgreSQL, the user was required to have PostgreSQL installed and set up locally, and then set up a local database as part of the setup process for Mockabase.  With SQLite, the database is simply a file that is created as soon as the user starts Mockabase, with most of the same functionality and no need for a local install.  Any relevant Postgres-exclusive functions such as timestamps and UUIDs are handled within Mockabase's code rather than in the database.  We recommend using [TablePlus](https://tableplus.com/) to look at the SQLite database directly should the need arise.
 
 # Major breaking changes
-## version 4.0
+## version 4.0 (March 2026)
 Add phone signup and login, add mock OTP functions, organize all routes by type.  Major breaking changes to Mockabase schemas, routes, and APIs all around to make these changes happen.  Changes to the Mockabase client, which we encourage using, are fairly minimal aside from the addition of new functions.
 
-Mockabase now also uses the [dataerror](https://www.npmjs.com/package/dataerror) package as a core dependency and most return statements have been rewritten to use dataerror.
+Mockabase now also uses the [dataerror](https://www.npmjs.com/package/dataerror) error-handling library as a core dependency and most return statements have been rewritten to use dataerror.
 
-## version 3.0
+Additionally, Mockabase now uses [Drizzle ORM](https://orm.drizzle.team) for end-to-end type safety in all database models, schemas, and functions.
+
+## version 3.0 (October 2025)
 All functions in the Mockabase client are now under a singular "auth" object, in order to mirror the Supabase API even more accurately.
+
+## version 2.5 (September 2025)
+Move database from local Postgres to an embedded SQLite database
 
 ## version 2.0
 ```signup```, ```login```, and ```get-current-session``` routes now return objects in the following format:
@@ -59,7 +64,7 @@ You must have the following installed locally to use Mockabase:
 9.  Running the tests leaves three users used to test a few of my other open source apps in the database which is why they are left in.  They are cleared and re-seeded at the beginning of every test run and left in at the end.
 
 # Tests
-Mockabase has a comprehensive test suite written with Vitest and covering most of Mockabase' core functions.  Not all code is unit-tested, but almost all core functions except the ```/clear``` endpoint are covered by the tests.  Any new major features contributed must be accompanied by tests confirming they work and must not break any existing tests unless the feature in question is a major breaking feature.  In this case, the way the tests were broken and had to be refactored must be documented.
+Mockabase has a comprehensive test suite written with Vitest and covering most of Mockabase' core functions.  Not all code is unit-tested, but almost all core functions except the ```/admin/clear``` endpoint are covered by the tests.  Any new major features contributed must be accompanied by tests confirming they work and must not break any existing tests unless the feature in question is a major breaking feature.  In this case, the way the tests were broken and had to be refactored must be documented.
 
 ## Suggsted Usage
 In your frontend, use an environment variable like ```NODE_ENV``` that is set to ```testing``` when it's time to test the app or prototype, then design your code to conditionally use Mockabase for authentication and authorization in all of your auth checks, login/logout functions, etc. only while the environment variable of your choice is set to ```testing``` or whatever you designate to be "testing mode".
@@ -120,7 +125,8 @@ Generally, the response for each route that returns responses is in the { data, 
 
 POST routes that accept body data can either receive it as a ```application/x-www-form-urlencoded```,  ```multipart/form-data```, or ```application/json``` Content-Type, except for the ```/seed``` and ```/delete-multiple-users``` routes, which accept only ```application/json``` as the Content-Type.  Hono uses different parsing functions for a form data body and a raw JSON body, which is why this distinction must be made.
 
-### **POST** /signup
+## Email/Password
+### **POST** /email-password/signup
 Create a new user in the database with id, email, and hashed password
 
 Accepted input body:
@@ -146,7 +152,7 @@ Returns:
   : errors.userAlreadyExists | errors.internalServerError | null }
 ```
 
-### **POST** /login
+### **POST** /email-password/login
 Login a user, uses bcrypt to compare the supplied password with the user's hashed password in the database.  If the passwords match, a session is created and the session info is returned to the authenticated uesr.  If the passwords do not match, no session is created and an error is returned to the user.
 
 Accepted input body:
@@ -173,10 +179,31 @@ Returns:
 }
 ```
 
-### **POST** /logout
+### **POST** /email-password/change-password
+Takes in a JSON body with an email address, and the new password, and changes the password for the user associated with that email addressto the new password in the database.
+
+Accepted body format:
+```
+  {
+    email: string (e-mail address),
+    newPassword: string,
+  },
+```
+
+Returns:
+```
+  {
+    data: null,
+    error: error | null
+  }
+```
+
+
+## Session-related
+### **POST** /session/logout
 Logs the current user out and clears the current session.
 
-### **GET** /get-current-session
+### **GET** /session/get-current-session
 Retrieves the current session from the session.json file.
 
 Returns:
@@ -192,7 +219,8 @@ Returns:
 }
 ```
 
-### **POST** /seed
+## Admin
+### **POST** /admin/seed
 Takes in an array of user ```{ id?, email, password }``` objects as a string. ```JSON.parse()```s the string to an array, then adds each user to the database if the user doesn't already exist.
 
 Accepted body format:
@@ -220,45 +248,7 @@ Returns:
 ```
 Unlike the other routes, the Content-Type for this route must be ```application/json```.
 
-### **POST** /change-password
-Takes in a JSON body with an email address, and the new password, and changes the password for the user associated with that email addressto the new password in the database.
-
-Accepted body format:
-```
-  {
-    email: string (e-mail address),
-    newPassword: string,
-  },
-```
-
-Returns:
-```
-  {
-    data: null,
-    error: error | null
-  }
-```
-
-
-### **POST** /mock-oauth/:provider
-Mocks an OAuth login with an e-mail address and password pre-determined with the MOCK_OAUTH_EMAIL and MOCK_OAUTH_PASSWORD environment variables.
-
-This route can functionally be used to mock both OAuth signup and OAuth login since they do the same thing in this local mock environment.
-
-Accepted URL Param: :provider - 'facebook' | 'google' | 'apple' | 'github' - doesn't matter because the provider variable is not used
-
-Returns:
-```
-{
-  data: {
-    id: string (UUID),
-    email: string (e-mail address)
-  } | null,
-  error: errors.internalServerError | null
-}
-```
-
-### **DELETE** /delete-user/:userId
+### **DELETE** /admin/delete-user/:userId
 
 Deletes a single user by ID.
 **USE WITH CAUTION.  THE DELETION IS PERMANENT AND CAN'T BE REVERSED**
@@ -273,7 +263,7 @@ Returns:
 }
 ```
 
-### **DELETE** /delete-multiple-users
+### **DELETE** /admin/delete-multiple-users
 
 Deletes multiple users according to an array of IDs.
 **USE WITH CAUTION.  THE DELETIONS ARE PERMANENT AND CAN'T BE REVERSED**
@@ -289,7 +279,7 @@ Returns:
 }
 ```
 
-### **DELETE** /clear
+### **DELETE** /admin/clear
 
 Deletes every user in the database
 **USE WITH CAUTION.  THE DELETIONS ARE PERMANENT AND CAN'T BE REVERSED**
@@ -311,7 +301,8 @@ Copy the following files into their corresponding folders in your frontend proje
 ```
   mockabaseClient.ts - the main client file
   typedFetch.ts - typedFetch function, a type-safe wrapper around the fetch API used by the Mockabase Client
-  ReturnObject.ts - the ReturnObject type used by most routes
+  MockabaseUserReturnObject.ts - the ReturnObject type used by most routes
+  User.ts - the User type used by the Session type below
   Session.ts - the Session type used by the ReturnObject type
   OAuthProvider.ts - the OAuthProvider type used by the OAuth routes
 ```
@@ -383,6 +374,8 @@ const login = async (args: { email: string, password: string }) => {
 * **Backend Framework**: [Hono](https://hono.dev/)
 * **Hash/Encryption Library**: [BCrypt](https://www.npmjs.com/package/bcrypt)
 * **SQLite Client**: [Better-SQLite3](https://github.com/WiseLibs/better-sqlite3)
+* **Type-safe ORM**: [Drizzle ORM](https://orm.drizzle.team)
+* **Error-handling library**: [dataerror](https://www.npmjs.com/package/dataerror)
 * **Testing**: [Vitest](https://vitest.dev/)
 
 Node is used instead of Deno, Bun, or other runtimes for maximum compatibility with everyone's use.
