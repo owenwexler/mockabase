@@ -48,7 +48,7 @@ const oauthLogin = async (args: OAuthArgs): Promise<MockabaseUserReturnObject> =
     const userResponse = await getUserByEmail(email);
 
     if (userResponse.error) {
-      return await failure<UserSessionObject>(userResponse.error.code === 'user_not_found' ? mockabaseErrors.userNotFound : userResponse.error, 'models/oauthLogin');
+      return await failure<UserSessionObject>(userResponse.error, `/oauth/login/${oauthProvider}`);
     }
 
     const user = userResponse.data!;

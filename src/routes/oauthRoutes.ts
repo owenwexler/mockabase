@@ -52,14 +52,14 @@ oauthRoutes.post('/login/:provider', async (c) => {
   const oauthProvider = provider as OAuthProvider;
 
   try {
-    const result = await oauthLogin({ email, oauthProvider });
+    const response = await oauthLogin({ email, oauthProvider });
 
-    if (result.error) {
-      const result = await failure<MockabaseUserReturnObject>(mockabaseErrors.userNotFound, '/oauth/login');
+    if (response.error) {
+      const result = await failure<MockabaseUserReturnObject>(response.error, '/oauth/login');
       return c.json(result);
     }
 
-    const session = createSession(result.data!.session);
+    const session = createSession(response.data!.session);
     const returnObject = await success<UserSessionObject>({ session });
     return c.json(returnObject);
   } catch (error) {

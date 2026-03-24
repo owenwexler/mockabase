@@ -91,6 +91,7 @@ const getUserByEmail = async (email: string): Promise<DataErrorReturnObject<User
       email: users.email,
       phoneNumber: users.phoneNumber,
       providerType: users.providerType,
+      oauthProvider: users.oauthProvider,
       encryptedPassword: users.encryptedPassword,
       otp: users.otp,
     }).from(users).where(eq(users.email, email)).all();

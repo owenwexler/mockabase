@@ -218,7 +218,6 @@ describe('Core functions', () => {
 
     // assign OTP "123456"
     const assignOtpResult123456 = await mockabaseClient.auth.assignOtp({ providerType: 'email-passwordless', email: 'passwordlessemail@mockabase.com', staticOTP: '123456' });
-    console.log(assignOtpResult123456);
     expect(assignOtpResult123456).toEqual({ data: 'ok', error: null });
 
     // verify with incorrect OTP → invalidOTP

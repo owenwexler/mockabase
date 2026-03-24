@@ -18,7 +18,6 @@ const assignOtp = async (args: AssignOTPArgs): Promise<DataErrorReturnObject<'ok
   try {
     if (providerType === 'phone') {
       const response = db.update(users).set({ otp }).where(eq(users.phoneNumber, phoneNumber!)).run();
-      console.log('response in assignOtp:', response)
 
       return await success<'ok'>('ok');
     } else {
@@ -97,10 +96,8 @@ const showOtp = async (args: ShowOTPArgs) => {
     if (providerType === 'phone') {
       const rows = db.select({ email: users.email, phoneNumber: users.phoneNumber, otp: users.otp }).from(users).where(eq(users.phoneNumber, userIdentifier)).all();
       const response = rows[0] ?? null;
-      console.log(response)
 
       const otpResult: ShowOTPResult | null = response;
-      console.log('otpResult in showOtp: ', otpResult)
 
       const otpNotFound = (!otpResult || !otpResult.otp || otpResult.otp === '');
 
@@ -113,7 +110,6 @@ const showOtp = async (args: ShowOTPArgs) => {
       const response = rows[0] ?? null;
 
       const otpResult: ShowOTPResult | null = response;
-      console.log('otpResult in showOtp: ', otpResult)
 
       const otpNotFound = (!otpResult || !otpResult.otp || otpResult.otp === '');
 
