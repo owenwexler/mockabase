@@ -71,20 +71,22 @@ In your frontend, use an environment variable like ```NODE_ENV``` that is set to
 
 Example:
 ```
+const mockabase = createMockabaseClient({ mockabaseUrl: env.MOCKABASE_URL });
+const supabase = createSupabaseClient();
+
+const email = 'example@email.com';
+const password: 'example-password';
+
 if (process.env.NODE_ENV === 'testing') {
-  const response = await fetch('http://localhost:4200/login', {
-    method: 'POST',
-    body: JSON.stringify({ email: 'example@emil.com', password: 'example-password' }),
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-
-  const result = await response.json();
-
+  const result = await mockabase.auth.signInWithPassword{
+    email,
+    password
+  }
   const { data, error } = result;
 } else {
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: 'example@email.com',
-    password: 'example-password',
+    email,
+    password
   });
 }
 ```
@@ -92,15 +94,17 @@ if (process.env.NODE_ENV === 'testing') {
 # Directory structure
 ```
 mockabase
-├── sql - the schema file used to build the local databse
 ├── src - source files
 │   ├── data - data files used by the app like blank objects, the seed and test user data for the DB
-│   ├── db - the file to initialize the DB
-│   │   ├── models - all DB models (currently just for user)
+│   ├── db - the file to initialize the DB and Drizzle (db.ts) and the Drizzle schema (schema.ts)
+│   │   ├── models - all DB models (email-password, email-passwordless, phone, OAuth, OTP, and delete)
 │   ├── helper - helper functions for comparing passwords, hashing, fetching, etc.
+│   ├── mockabaseClient - the Mockabase client
+│   ├── routes - all route files organized by auth type
 │   ├── session - all functions for creating, deleting, and managing sessions
+│   ├── sql - the schema file used to build the local database
 │   ├── typedefs - type definitions
-│   ├── index.ts - the main file containing the server initialization and all the routes, the beating heart of Mockabase
+│   ├── index.ts - the main file containing the server initialization, the beating heart of Mockabase
 ├── tests - test directory
 │   ├── testEnv - test environment (not committed to GitHub, must be created manually), and the template for creating the test environment manually)
 │   ├── testFunctions - all reusable functions used in the tests
@@ -123,7 +127,7 @@ mockabase
 # Routes/Endpoints
 Generally, the response for each route that returns responses is in the { data, error } format also used by Supabase.
 
-POST routes that accept body data can either receive it as a ```application/x-www-form-urlencoded```,  ```multipart/form-data```, or ```application/json``` Content-Type, except for the ```/seed``` and ```/delete-multiple-users``` routes, which accept only ```application/json``` as the Content-Type.  Hono uses different parsing functions for a form data body and a raw JSON body, which is why this distinction must be made.
+POST routes that accept body data can either receive it as a ```application/x-www-form-urlencoded```,  ```multipart/form-data```, or ```application/json``` Content-Type, except for the ```/seed```, ```/delete-multiple-users```, and all ```/otp``` routes, which accept only ```application/json``` as the Content-Type.  Hono uses different parsing functions for a form data body and a raw JSON body, which is why this distinction must be made.
 
 ## Email/Password
 ### **POST** /email-password/signup
@@ -197,7 +201,6 @@ Returns:
     error: error | null
   }
 ```
-
 
 ## Session-related
 ### **POST** /session/logout
@@ -292,6 +295,246 @@ Returns:
 }
 ```
 
+## Phone
+### **POST** /phone/signup
+Create a new user in the database with id, phone number, and a generated OTP.  An OTP is generated automatically on signup and must be verified via the ```/otp/verify-otp``` route before the user can log in.
+
+Accepted input body:
+```
+{
+  id?: string (UUID),
+  phoneNumber: string,
+  staticOTP?: string
+}
+```
+id is an optional field.  If the id field is left off the body, a random UUID will be generated.  staticOTP is an optional field that allows a fixed OTP value for consistent test results.
+
+Returns:
+```
+{
+  data: {
+    session: {
+      id: string (UUID),
+      phoneNumber: string
+    }
+  } | null,
+  error: errors.userAlreadyExists | errors.internalServerError | null
+}
+```
+
+### **POST** /phone/login
+Log in a user by phone number.  The user's OTP must have been previously verified via ```/otp/verify-otp``` for login to succeed.
+
+Accepted input body:
+```
+{
+  phoneNumber: string
+}
+```
+
+Returns:
+```
+{
+  data: {
+    session: {
+      id: string (UUID),
+      phoneNumber: string
+    }
+  } | null,
+  error: errors.internalServerError | errors.invalidCredentials | errors.userNotFound | null
+}
+```
+
+## Email-Passwordless
+### **POST** /email-passwordless/signup
+Create a new user in the database with id, email, and a generated OTP.  An OTP is generated automatically on signup and must be verified via the ```/otp/verify-otp``` route before the user can log in.
+
+Accepted input body:
+```
+{
+  id?: string (UUID),
+  email: string (email address),
+  staticOTP?: string
+}
+```
+id is an optional field.  If the id field is left off the body, a random UUID will be generated.  staticOTP is an optional field that allows a fixed OTP value for consistent test results.
+
+Returns:
+```
+{
+  data: {
+    session: {
+      id: string (UUID),
+      email: string (email address)
+    }
+  } | null,
+  error: errors.userAlreadyExists | errors.internalServerError | null
+}
+```
+
+### **POST** /email-passwordless/login
+Log in a user by email without a password.  The user's OTP must have been previously verified via ```/otp/verify-otp``` for login to succeed.
+
+Accepted input body:
+```
+{
+  email: string (email address)
+}
+```
+
+Returns:
+```
+{
+  data: {
+    session: {
+      id: string (UUID),
+      email: string (email address)
+    }
+  } | null,
+  error: errors.internalServerError | errors.invalidCredentials | errors.userNotFound | null
+}
+```
+
+## OAuth
+### **POST** /oauth/signup/:provider
+Create a new user in the database via OAuth.  The provider is passed as a URL parameter.
+
+Accepted URL param: :provider - the OAuth provider (e.g. ```google```, ```github```, etc.)
+
+Accepted input body:
+```
+{
+  id?: string (UUID),
+  email: string (email address)
+}
+```
+id is an optional field.  If the id field is left off the body, a random UUID will be generated.
+
+Returns:
+```
+{
+  data: {
+    session: {
+      id: string (UUID),
+      email: string (email address)
+    }
+  } | null,
+  error: errors.userAlreadyExists | errors.internalServerError | null
+}
+```
+
+### **POST** /oauth/login/:provider
+Log in a user via OAuth.  The provider is passed as a URL parameter.
+
+Accepted URL param: :provider - the OAuth provider (e.g. ```google```, ```github```, etc.)
+
+Accepted input body:
+```
+{
+  email: string (email address)
+}
+```
+
+Returns:
+```
+{
+  data: {
+    session: {
+      id: string (UUID),
+      email: string (email address)
+    }
+  } | null,
+  error: errors.internalServerError | errors.userNotFound | null
+}
+```
+
+## OTP
+OTP routes accept only ```application/json``` as the Content-Type.
+
+### **POST** /otp/assign-otp
+Assign a new OTP to an existing user, optionally with a static value for consistent test results.
+
+Accepted input body:
+```
+{
+  providerType: 'email-password' | 'email-passwordless' | 'phone' | 'oauth',
+  email?: string (email address),
+  phoneNumber?: string,
+  staticOTP?: string
+}
+```
+
+Returns:
+```
+{
+  data: 'ok' | null,
+  error: error | null
+}
+```
+
+### **POST** /otp/verify-otp
+Verify a user's OTP.  A successful verification allows the user to log in via phone or email-passwordless routes.
+
+Accepted input body:
+```
+{
+  providerType: 'email-password' | 'email-passwordless' | 'phone' | 'oauth',
+  email?: string (email address),
+  phoneNumber?: string,
+  staticOTP?: string,
+  otp: string
+}
+```
+
+Returns:
+```
+{
+  data: 'ok' | null,
+  error: error | null
+}
+```
+
+### **POST** /otp/clear-otp
+Clear the OTP for a user by their ID.
+
+Accepted input body:
+```
+{
+  id: string (UUID)
+}
+```
+
+Returns:
+```
+{
+  data: null,
+  error: error | null
+}
+```
+
+### **POST** /otp/show-otp
+Retrieve the current OTP for a user, identified by their email or phone number and provider type.  Primarily useful in testing to retrieve an OTP without having to mock a real OTP delivery service.
+
+Accepted input body:
+```
+{
+  userIdentifier: string (user's email or phone number),
+  providerType: 'email-password' | 'email-passwordless' | 'phone' | 'oauth'
+}
+```
+
+Returns:
+```
+{
+  data: {
+    email?: string (email address),
+    phoneNumber?: string,
+    otp?: string
+  } | null,
+  error: error | null
+}
+```
+
 # Mockabase Client
 
 The Mockabase client is a thin abstraction over some of the API routes used most by frontends that mimics the Supabase client's API.
@@ -317,18 +560,27 @@ The Mockabase client takes in the URL on which you have the Mockabase server run
 
 Returns the following object with several functions that mirror the above API routes, taking in the same inputs and returning the same data.
 
+### Client Object Shape
 ```
 {
   url: string;
   auth: { // as of version 3.0, all auth functions are under this auth object
-    getUser(): Function - Corresponding route: /get-user-session,
-    getSession(): Function - Corresponding route: /get-user-session,
-    signInWithPassword(args: { email: string, password: string }): Function - Corresponding route: /login,
-    signInWithOAuth(args: { provider: OAuthProvider }): Function - Corresponding route: /mock-oauth,
-    signOut(): Function - Corresponding route: /logout,
-    signUpWithPassword(args: { id: string, email: string, password: string }): Function - Corresponding route: /signup,
-    signUpWithOAuth(args: { provider: OAuthProvider }): Function - Corresponding route: /mock-oauth,
-    updateUser(args: { email: string, newPassword: string }): Function - Corresponding route: /change-password
+    getUser(): Function - Corresponding route: /session/get-current-session,
+    getSession(): Function - Corresponding route: /session/get-current-session,
+    signInWithPassword(args: { email: string, password: string }): Function - Corresponding route: /email-password/login,
+    signUpWithPassword(args: { id?: string, email: string, password: string }): Function - Corresponding route: /email-password/signup,
+    updateUser(args: { email: string, newPassword: string }): Function - Corresponding route: /email-password/change-password,
+    signInWithOAuth(args: { email: string, provider: OAuthProvider }): Function - Corresponding route: /oauth/login/:provider,
+    signUpWithOAuth(args: { email: string, provider: OAuthProvider }): Function - Corresponding route: /oauth/signup/:provider,
+    signInWithPhone(args: { phoneNumber: string }): Function - Corresponding route: /phone/login,
+    signUpWithPhone(args: { id?: string, phoneNumber: string, staticOTP?: string }): Function - Corresponding route: /phone/signup,
+    signInWithEmailPasswordless(args: { email: string }): Function - Corresponding route: /email-passwordless/login,
+    signUpWithEmailPasswordless(args: { id?: string, email: string, staticOTP?: string }): Function - Corresponding route: /email-passwordless/signup,
+    assignOtp(args: { providerType: Provider, email?: string, phoneNumber?: string, staticOTP?: string }): Function - Corresponding route: /otp/assign-otp,
+    verifyOtp(args: { providerType: Provider, email?: string, phoneNumber?: string, staticOTP?: string, otp: string }): Function - Corresponding route: /otp/verify-otp,
+    clearOtp(id: string): Function - Corresponding route: /otp/clear-otp,
+    showOtp(args: { userIdentifier: string, providerType: Provider }): Function - Corresponding route: /otp/show-otp,
+    signOut(): Function - Corresponding route: /session/logout
   }
 }
 ```
