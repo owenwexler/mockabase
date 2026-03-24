@@ -1,1 +1,1 @@
-export type OAuthProvider = 'facebook' | 'google' | 'twitter' | 'github' | 'discord';
+export type OAuthProvider = 'facebook' | 'google' | 'twitter' | 'apple' | 'instagram' | 'github' | 'discord';
