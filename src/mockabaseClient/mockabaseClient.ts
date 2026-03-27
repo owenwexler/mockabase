@@ -8,12 +8,37 @@ import type { PhoneSignupArgs } from "../typedefs/PhoneSignupArgs";
 import type { GenericUserPhoneArgs } from "../typedefs/GenericUserPhoneArgs";
 import type { EmailPasswordlessSignupArgs } from "../typedefs/EmailPasswordlessSignupArgs";
 import type { ShowOTPArgs } from "../typedefs/ShowOTPArgs";
+import type { UserSessionObject } from "../typedefs/UserSessionObject";
+
+interface MockabaseClientAuthObject {
+  getUser: () => Promise<MockabaseUserReturnObject>;
+  getSession: () => Promise<MockabaseUserReturnObject>;
+  signInWithPassword: (args: { id: string, email: string, password: string }) => Promise<MockabaseUserReturnObject>;
+  signUpWithPassword: (args: { id: string, email: string, password: string }) => Promise<MockabaseUserReturnObject>;
+  updateUser: (args: { email: string, newPassword: string }) => Promise<MockabaseUserReturnObject>;
+  signUpWithOAuth: (args: { email: string, provider: OAuthProvider }) => Promise<MockabaseUserReturnObject>;
+  signInWithOAuth: (args: { email: string, provider: OAuthProvider }) => Promise<MockabaseUserReturnObject>;
+  signUpWithPhone: (args: PhoneSignupArgs) => Promise<MockabaseUserReturnObject>;
+  signInWithPhone: (args: GenericUserPhoneArgs) => Promise<MockabaseUserReturnObject>;
+  signUpWithEmailPasswordless: (args: EmailPasswordlessSignupArgs) => Promise<MockabaseUserReturnObject>;
+  signInWithEmailPasswordless: (args: EmailPasswordlessSignupArgs) => Promise<MockabaseUserReturnObject>;
+  assignOtp: (args: AssignOTPArgs) => Promise<MockabaseUserReturnObject>;
+  verifyOtp: (args: VerifyOTPArgs) => Promise<MockabaseUserReturnObject>;
+  clearOtp: (id: string) => Promise<MockabaseUserReturnObject>;
+  showOtp: (args: ShowOTPArgs) => Promise<MockabaseUserReturnObject>;
+  signOut: () => Promise<void>;
+}
+
+interface MockabaseClient {
+  url: string;
+  auth: MockabaseClientAuthObject;
+}
 
 interface CreateMockbaseClientArgs {
   mockabaseUrl: string;
 }
 
-const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
+const createMockabaseClient = (args: CreateMockbaseClientArgs): MockabaseClient => {
   const { mockabaseUrl } = args;
   return {
     url: mockabaseUrl,
@@ -44,7 +69,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
         return response;
       },
-      signInWithPassword: async function (args: { email: string, password: string }) {
+      signInWithPassword: async function (args: { id: string, email: string, password: string }) {
         try {
           const session = await typedFetch<MockabaseUserReturnObject>({
             url: `${mockabaseUrl}/email-password/login`,
@@ -57,7 +82,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
           return session;
         } catch (error) {
-          return await failure<null>(error, 'mockabaseClient/signInWithPassword');
+          return await failure<UserSessionObject>(error, 'mockabaseClient/signInWithPassword');
         }
       },
       signUpWithPassword: async function (args: { id: string, email: string, password: string }) {
@@ -79,7 +104,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
           return response;
         } catch (error) {
-          return await failure<null>(error, 'mockabaseClient/signUpWithPassword');
+          return await failure<UserSessionObject>(error, 'mockabaseClient/signUpWithPassword');
         }
       },
       updateUser: async function (args: { email: string, newPassword: string }) {
@@ -95,7 +120,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
           return response;
         } catch (error) {
-          return await failure<null>(error, 'mockabaseClient/updateUser');
+          return await failure<UserSessionObject>(error, 'mockabaseClient/updateUser');
         }
       },
       signUpWithOAuth: async function(args: { email: string, provider: OAuthProvider }) {
@@ -113,7 +138,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
           return response;
         } catch (error) {
-          return await failure<null>(error, 'mockabaseClient/signUpWithOAuth');
+          return await failure<UserSessionObject>(error, 'mockabaseClient/signUpWithOAuth');
         }
       },
       signInWithOAuth: async function (args: { email: string, provider: OAuthProvider }) {
@@ -131,7 +156,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
           return response;
         } catch (error) {
-          return await failure<null>(error, 'mockabaseClient/signInWithOAuth');
+          return await failure<UserSessionObject>(error, 'mockabaseClient/signInWithOAuth');
         }
       },
       signUpWithPhone: async function (args: PhoneSignupArgs) {
@@ -195,7 +220,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
           return response;
         } catch (error) {
-          return await failure<null>(error, 'mockabaseClient/signInWithEmailPasswordless');
+          return await failure<UserSessionObject>(error, 'mockabaseClient/signInWithEmailPasswordless');
         }
       },
       // Supabase uses Otp in their function names instead of OTP so this is what we are doing
@@ -212,7 +237,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
           return response;
         } catch (error) {
-          return await failure<null>(error, 'mockabaseClient/assignOtp');
+          return await failure<UserSessionObject>(error, 'mockabaseClient/assignOtp');
         }
       },
       verifyOtp: async function (args: VerifyOTPArgs) {
@@ -228,7 +253,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
           return response;
         } catch (error) {
-          return await failure<null>(error, 'mockabaseClient/verifyOtp');
+          return await failure<UserSessionObject>(error, 'mockabaseClient/verifyOtp');
         }
       },
       clearOtp: async function (id: string) {
@@ -244,7 +269,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
           return response;
         } catch (error) {
-          return await failure<null>(error, 'mockabaseClient/clearOtp');
+          return await failure<UserSessionObject>(error, 'mockabaseClient/clearOtp');
         }
       },
       showOtp: async function (args: ShowOTPArgs) {
@@ -260,7 +285,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs) => {
 
           return response;
         } catch (error) {
-          return await failure<null>(error, 'mockabaseClient/showOtp');
+          return await failure<UserSessionObject>(error, 'mockabaseClient/showOtp');
         }
       },
       signOut: async function () {
