@@ -27,6 +27,8 @@ interface MockabaseClientAuthObject {
   clearOtp: (id: string) => Promise<MockabaseUserReturnObject>;
   showOtp: (args: ShowOTPArgs) => Promise<MockabaseUserReturnObject>;
   signOut: () => Promise<void>;
+  deleteUser: (userId: string) => Promise<MockabaseUserReturnObject>;
+  getIdByEmail: (email: string) => Promise<MockabaseUserReturnObject>;
 }
 
 interface MockabaseClient {
@@ -297,6 +299,28 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs): MockabaseClient 
           }
         });
       },
+      deleteUser: async function (userId: string) {
+        const response = await typedFetch<MockabaseUserReturnObject>({
+          url: `${mockabaseUrl}/delete-user/${userId}`,
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        return response;
+      },
+      getIdByEmail: async function (email: string) {
+        try {
+          const response = await typedFetch<MockabaseUserReturnObject>({
+            url: `${mockabaseUrl}/admin/get-id-by-email?email=${encodeURIComponent(email)}`,
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+          });
+
+          return response;
+        } catch (error) {
+          return await failure<null>(error, 'mockabaseClient/getIdByEmail');
+        }
+      }
     }
   }
 }

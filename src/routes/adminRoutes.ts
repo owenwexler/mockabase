@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { UserSessionObject } from "../typedefs/UserSessionObject";
 import { failure, success } from "dataerror";
 import { deleteAllUsers, deleteMultipleUsers, deleteUser } from "../db/models/delete";
+import { getIdByEmail } from "../db/models/id";
 import { emailPasswordSignup } from "../db/models/emailPasswordAuth";
 import { phoneSignup } from "../db/models/phoneAuth";
 import { oauthSignup } from "../db/models/oauth";
@@ -95,6 +96,19 @@ adminRoutes.delete('/delete-multiple-users', async (c) => {
     return c.json(result);
   } catch (error) {
     const result = await failure<null>(error, 'routes/admin/delete-multiple-users');
+    return c.json(result);
+  }
+});
+
+adminRoutes.get('/get-id-by-email', async (c) => {
+  const email = c.req.query('email');
+  console.log(`GET /admin/get-id-by-email?email=${email}`);
+
+  try {
+    const result = await getIdByEmail(email!);
+    return c.json(result);
+  } catch (error) {
+    const result = await failure<null>(error, 'routes/admin/get-id-by-email');
     return c.json(result);
   }
 });

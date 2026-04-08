@@ -337,6 +337,16 @@ describe('Core functions', () => {
     expect(loginAfterDeletion).toEqual({ data: null, error: mockabaseErrors.userNotFound });
   });
 
+  test('getting the ID for a user that exists by email returns the correct ID', async () => {
+    const result = await mockabaseClient.auth.getIdByEmail('owenwexler@mockabase.com');
+    expect(result).toEqual({ data: { id: '7402e76c-e5bd-4862-ab6b-b742f664b17e' }, error: null });
+  });
+
+  test('getting the ID for a user that does not exist returns the proper error', async () => {
+    const result = await mockabaseClient.auth.getIdByEmail('doesnotexist@nowhere.com');
+    expect(result).toEqual(nonexistentUserErrorObject);
+  });
+
   // re-seed the test users into the DB after the tests are finished
   afterAll(async () => {
     await seedDB();
