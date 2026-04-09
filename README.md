@@ -295,6 +295,22 @@ Returns:
 }
 ```
 
+### **GET** /admin/get-id-by-email
+
+Retrieves the ID of a user by their email address.
+
+Accepted query param: `email` - the email address of the user to look up
+
+Example: `/admin/get-id-by-email?email=user@example.com`
+
+Returns:
+```
+{
+  data: { id: string (UUID) } | null,
+  error: errors.userNotFound | errors.internalServerError | null
+}
+```
+
 ## Phone
 ### **POST** /phone/signup
 Create a new user in the database with id, phone number, and a generated OTP.  An OTP is generated automatically on signup and must be verified via the ```/otp/verify-otp``` route before the user can log in.
@@ -580,7 +596,8 @@ Returns the following object with several functions that mirror the above API ro
     verifyOtp(args: { providerType: Provider, email?: string, phoneNumber?: string, staticOTP?: string, otp: string }): Function - Corresponding route: /otp/verify-otp,
     clearOtp(id: string): Function - Corresponding route: /otp/clear-otp,
     showOtp(args: { userIdentifier: string, providerType: Provider }): Function - Corresponding route: /otp/show-otp,
-    signOut(): Function - Corresponding route: /session/logout
+    signOut(): Function - Corresponding route: /session/logout,
+    getIdByEmail(email: string): Function - Corresponding route: /admin/get-id-by-email
   }
 }
 ```
