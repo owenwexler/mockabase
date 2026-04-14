@@ -2,6 +2,7 @@ import { typedFetch } from "../helper/typedFetch";
 import type { OAuthProvider } from "../typedefs/OAuthProvider";
 import type { MockabaseUserReturnObject } from "../typedefs/MockabaseUserReturnObject";
 import { failure } from "dataerror";
+import type { DataErrorReturnObject } from "dataerror";
 import type { AssignOTPArgs } from "../typedefs/AssignOTPArgs";
 import type { VerifyOTPArgs } from "../typedefs/VerifyOTPArgs";
 import type { PhoneSignupArgs } from "../typedefs/PhoneSignupArgs";
@@ -10,14 +11,29 @@ import type { EmailPasswordlessSignupArgs } from "../typedefs/EmailPasswordlessS
 import type { ShowOTPArgs } from "../typedefs/ShowOTPArgs";
 import type { UserSessionObject } from "../typedefs/UserSessionObject";
 
+interface GetIdByEmailReturnType {
+  id: string;
+}
+
+interface PasswordSignInArgs {
+  id: string;
+  email: string;
+  password: string;
+}
+
+interface OAuthSignInArgs {
+  email: string;
+  provider: OAuthProvider;
+}
+
 interface MockabaseClientAuthObject {
   getUser: () => Promise<MockabaseUserReturnObject>;
   getSession: () => Promise<MockabaseUserReturnObject>;
-  signInWithPassword: (args: { id: string, email: string, password: string }) => Promise<MockabaseUserReturnObject>;
-  signUpWithPassword: (args: { id: string, email: string, password: string }) => Promise<MockabaseUserReturnObject>;
+  signInWithPassword: (args: PasswordSignInArgs) => Promise<MockabaseUserReturnObject>;
+  signUpWithPassword: (args: PasswordSignInArgs) => Promise<MockabaseUserReturnObject>;
   updateUser: (args: { email: string, newPassword: string }) => Promise<MockabaseUserReturnObject>;
-  signUpWithOAuth: (args: { email: string, provider: OAuthProvider }) => Promise<MockabaseUserReturnObject>;
-  signInWithOAuth: (args: { email: string, provider: OAuthProvider }) => Promise<MockabaseUserReturnObject>;
+  signUpWithOAuth: (args: OAuthSignInArgs) => Promise<MockabaseUserReturnObject>;
+  signInWithOAuth: (args: OAuthSignInArgs) => Promise<MockabaseUserReturnObject>;
   signUpWithPhone: (args: PhoneSignupArgs) => Promise<MockabaseUserReturnObject>;
   signInWithPhone: (args: GenericUserPhoneArgs) => Promise<MockabaseUserReturnObject>;
   signUpWithEmailPasswordless: (args: EmailPasswordlessSignupArgs) => Promise<MockabaseUserReturnObject>;
@@ -28,7 +44,7 @@ interface MockabaseClientAuthObject {
   showOtp: (args: ShowOTPArgs) => Promise<MockabaseUserReturnObject>;
   signOut: () => Promise<void>;
   deleteUser: (userId: string) => Promise<MockabaseUserReturnObject>;
-  getIdByEmail: (email: string) => Promise<MockabaseUserReturnObject>;
+  getIdByEmail: (email: string) => Promise<DataErrorReturnObject<GetIdByEmailReturnType>>;
 }
 
 interface MockabaseClient {
@@ -301,7 +317,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs): MockabaseClient 
       },
       deleteUser: async function (userId: string) {
         const response = await typedFetch<MockabaseUserReturnObject>({
-          url: `${mockabaseUrl}/delete-user/${userId}`,
+          url: `${mockabaseUrl}/admin/delete-user/${userId}`,
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' }
         });
@@ -310,7 +326,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs): MockabaseClient 
       },
       getIdByEmail: async function (email: string) {
         try {
-          const response = await typedFetch<MockabaseUserReturnObject>({
+          const response = await typedFetch<DataErrorReturnObject<GetIdByEmailReturnType>>({
             url: `${mockabaseUrl}/admin/get-id-by-email?email=${encodeURIComponent(email)}`,
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
@@ -318,7 +334,7 @@ const createMockabaseClient = (args: CreateMockbaseClientArgs): MockabaseClient 
 
           return response;
         } catch (error) {
-          return await failure<null>(error, 'mockabaseClient/getIdByEmail');
+          return await failure<{ id: string }>(error, 'mockabaseClient/getIdByEmail');
         }
       }
     }
