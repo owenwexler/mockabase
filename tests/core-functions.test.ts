@@ -33,11 +33,11 @@ const passwordLoginTestCases = passwordUsers.map(obj => {
 
 const wrongPasswordTestCases = [
   {
-    input: { email: 'owenwexler@mockabase.com', password: 'owexler!2' },
+    input: { id: '0000-0000-0000-0000', email: 'owenwexler@mockabase.com', password: 'owexler!2' },
     expected: wrongPasswordErrorObject
   },
   {
-    input: { email: 'owenwexler@mockabase.com', password: 'asdfsdfwoeifjoi' },
+    input: { id: '0000-0000-0000-0000', email: 'owenwexler@mockabase.com', password: 'asdfsdfwoeifjoi' },
     expected: wrongPasswordErrorObject
   }
 ];
@@ -62,7 +62,7 @@ describe('Core functions', () => {
   });
 
   test.each(passwordLoginTestCases)(`logging in as each test user with the correct password returns the expected result`, async ({ input, expected }) => {
-    const result = await mockabaseClient.auth.signInWithPassword({ email: input.email!, password: input.password! });
+    const result = await mockabaseClient.auth.signInWithPassword({ id: input.id!, email: input.email!, password: input.password! });
     expect(result).toEqual(expected);
     await mockabaseClient.auth.signOut();
   })
@@ -80,7 +80,7 @@ describe('Core functions', () => {
   });
 
   test('attempting to log in as a nonexistent user returns the proper error', async () => {
-    const session = await mockabaseClient.auth.signInWithPassword({ email: 'thisuser@doesntexist.com', password: 'doesntexist' });
+    const session = await mockabaseClient.auth.signInWithPassword({ id: '0000-0000-0000-0000', email: 'thisuser@doesntexist.com', password: 'doesntexist' });
     expect(session).toEqual(nonexistentUserErrorObject);
     await mockabaseClient.auth.signOut();
   });
@@ -101,7 +101,7 @@ describe('Core functions', () => {
 
     await mockabaseClient.auth.signOut();
 
-    const result = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: newTestUser.password });
+    const result = await mockabaseClient.auth.signInWithPassword({ id: '0000-0000-0000-0000', email: newTestUser.email, password: newTestUser.password });
 
     expect(result).toEqual({
       data: correctNewTestUserResult,
@@ -114,19 +114,19 @@ describe('Core functions', () => {
   test('a user can change their password successfully when logged in, the old password does not work after change and the new password works', async () => {
     const correctNewTestUserResult = { session: { id: newTestUser.id, email: newTestUser.email, phoneNumber: null, providerType: 'email-password', oauthProvider: null } };
 
-    const login = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: newTestUser.password });
+    const login = await mockabaseClient.auth.signInWithPassword({ id: newTestUser.id, email: newTestUser.email, password: newTestUser.password });
 
     const changePasswordResult = await changeTestUserPassword();
 
     await mockabaseClient.auth.signOut();
 
-    const loginWithOldPassword = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: newTestUser.password });
+    const loginWithOldPassword = await mockabaseClient.auth.signInWithPassword({ id: newTestUser.id, email: newTestUser.email, password: newTestUser.password });
     expect(loginWithOldPassword).toEqual({
       data: null,
       error: mockabaseErrors.invalidCredentials
     });
 
-    const loginWithNewPassword = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: 'testtesttest!2' });
+    const loginWithNewPassword = await mockabaseClient.auth.signInWithPassword({ id: newTestUser.id, email: newTestUser.email, password: 'testtesttest!2' });
     expect(loginWithNewPassword).toEqual({
       data: correctNewTestUserResult,
       error: null
@@ -139,7 +139,7 @@ describe('Core functions', () => {
     const deletionResult = await testDeleteUser(newTestUser.id);
     expect(deletionResult).toEqual(emptySessionObject);
 
-    const deletedUserSession = await mockabaseClient.auth.signInWithPassword({ email: newTestUser.email, password: newTestUser.password });
+    const deletedUserSession = await mockabaseClient.auth.signInWithPassword({ id: newTestUser.id, email: newTestUser.email, password: newTestUser.password });
     expect(deletedUserSession).toEqual(nonexistentUserErrorObject);
   });
 

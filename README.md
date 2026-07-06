@@ -51,17 +51,15 @@ You must have the following installed locally to use Mockabase:
 
 3.  Run ```npm install``` to install all dependencies.
 
-4.  Create a ```.env``` file and set up all environment variables according to the ```.env.example``` file.  For the PORT number, I recommend using a port number you don't use for any other servers or services, since you'll likely be running Mockabase alongside of many other services.
+4.  Create a ```.env``` file and set up all environment variables according to the ```.env.example``` file.  The NODE_ENV variable should always be set to 'development', since Mockabase is not to be used in production.  For the PORT number, I recommend using a port number you don't use for any other servers or services, since you'll likely be running Mockabase alongside of many other services.
 
-5.  Create a ```testEnv.ts``` file in the ```tests/testEnv``` folder and set up all the ```testEnv``` variables according to the ```testEnv.example.ts``` file.  This is necessary because Vitest can not read ```process.env```.
+5.  Create a ```testEnv.ts``` file in the ```tests/testEnv``` folder and set up all the ```testEnv``` variables according to the ```testEnv.example.ts``` file.  This is necessary because Vitest can not read ```process.env```.  As of July 2026, the only variable in ```testEnv``` is your host URL, which should be the URL you run Mockabase on without the trailing / at the end.
 
-6.  Create a user using the ```/signup``` route (very important to use the ```/signup``` route so you get a properly hashed password) for use with the mock OAuth function and fill out the corresponding environment variables in both ```.env``` and ```testEnv.ts``` accordingly.
+6.  Run the server using ```npm run dev```.
 
-7.  Run the server using ```npm run dev```.
+7.  Run the tests using ```npm run test``` and confirm that they all pass.
 
-8.  Run the tests using ```npm run test``` and confirm that they all pass.
-
-9.  Running the tests leaves three users used to test a few of my other open source apps in the database which is why they are left in.  They are cleared and re-seeded at the beginning of every test run and left in at the end.
+8.  Running the tests leaves three users used to test a few of my other open source apps in the database which is why they are left in.  They are cleared and re-seeded at the beginning of every test run and left in at the end.
 
 # Tests
 Mockabase has a comprehensive test suite written with Vitest and covering most of Mockabase' core functions.  Not all code is unit-tested, but almost all core functions except the ```/admin/clear``` endpoint are covered by the tests.  Any new major features contributed must be accompanied by tests confirming they work and must not break any existing tests unless the feature in question is a major breaking feature.  In this case, the way the tests were broken and had to be refactored must be documented.
